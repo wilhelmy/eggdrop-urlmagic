@@ -2,12 +2,44 @@ urlmagic by rojo and ente
 
 Description:
 
-Does magic things with URLs:
-  * Follows links posted in channel
+Does following magic things with URLs:
+  * Follows links posted in a channel if the udef flag +urlmagic is set
   * If content-type ~ text/html and <title>content exists</title> display title
   * Otherwise, display content-type
   * If url length > threshold, fetch and display tinyurl
-  * If redirect, display final destination URL
-  * Optionally record all this bullshit to your Twitter page or a SQLite database
+
+Optional features:
+
+Plugins exist for:
+
+  * Optionally recording all URLs to your Twitter page or an SQLite database
+  * Flagging links as NSFW if it was mentioned in the text next to the link
+  * Displaying the size of a page
+  * Displaying the final destination URL in case there was a redirect
+
+In short, what's displayed and what isn't can be influenced by plugins.
+
+This script needs at least the following packages: http, tls and tcllib (for hook)
+It is advised to also install either gumbo or arabica to use the more fail-safe
+title parser.
+
+Use your distribution's package management system to install the dependencies
+as appropriate.
+
+Examples:
+
+Debian / Ubuntu:
+    apt-get install tcllib tcl-tls
+
+Red Hat / CentOS:
+    yum install tcllib tcltls
+
+Gentoo:
+    emerge -v tcllib dev-tcltk/tls
+
+FreeBSD:
+    pkg_add -r tcllib tcltls
+
 
 Please report bugs to ente on IRCnet.
+

@@ -1,0 +1,34 @@
+You will probably want to install the gumbo or arabica HTML/Tagsoup parsers.
+These parsers will provide better results with broken HTML.
+
+If you can't compile anything at all, please use the "dumb" setting for
+htmltitle. This will work in most, but not all cases.
+
+Assuming you installed gumbo or arabica globally in /usr/local, you will need
+to do the following:
+
+  $ cd htmltitle_{whichever}
+
+  Now edit the Makefile, fix the include path for whereever the Tcl header
+  files are installed and possibly also the library path for gumbo/arabica.
+  gumbo uses pkg-config so chances are you won't need to edit anything.
+  $ nano Makefile
+  $ make
+
+It will look like this for arabica:
+  g++ -I/usr/local/include/arabica -I/usr/include/tcl8.5   -c -o htmltitle.o htmltitle.C
+  g++ -shared -L/usr/local/lib -Wl,-rpath,/usr/local/lib -larabica  htmltitle.o -o htmltitle.so
+
+And like this for gumbo:
+
+  $ make
+  cc -std=c99 -I/usr/local/include   -I/usr/include/tcl8.5   -c -o htmltitle.o htmltitle.c
+  cc -shared -L/usr/local/lib -lgumbo    htmltitle.o -o htmltitle.so
+
+That's it, unless there's a compile error, which will print this as its last
+line:
+
+  make: *** [htmltitle.o] Error 1
+
+In that case, you can either use the dumb setting for htmltitle or poke me on
+IRC.

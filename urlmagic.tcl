@@ -20,9 +20,20 @@ set settings(config-file) "conf/urlmagic.tcl"
 
 namespace eval ::urlmagic {
 
+
+foreach lib {http tls hook} {
+	if {[catch {package require $lib}]} {
+		putlog "Error loading urlmagic: Library $lib is missing. See README for more information."
+		return false
+	}
+}
+
+proc myself {} {
+	string trim [uplevel 1 namespace current] :
+}
+
 proc warn {text} {
-	set ns [string trim [uplevel 1 namespace current] :]
-	putlog "\002(Warning)\002 $ns: $text"
+	putlog "\002(Warning)\002 [myself]: $text"
 }
 
 if {! [file exists $urlmagic::settings(config-file)]} {
@@ -38,19 +49,6 @@ variable ignores ;# temporary ignores
 set settings(base-path) [file dirname [info script]]
 
 variable title ;# contains process_title's things, also used for string building by hooks
-
-  
-if {$settings(htmltitle) != "dumb"} {
-	load tcl/urlmagic/htmltitle_$settings(htmltitle)/htmltitle.so
-} else {
-	# "dumb" htmltitle implementation
-	proc htmltitle {data} {
-		set data [string map {\r "" \n ""} $data]
-		if {[regexp -nocase {<\s*?title\s*?>\s*?(.*?)\s*<\s*/title\s*>} $data - title]} {
-			return [string map {&#x202a; "" &#x202c; "" &rlm; ""} [string trim $title]]; # "for YouTube", says rojo
-		}
-	}
-}
 
 proc unignore {nick uhost hand chan msg} {
 	# HACK: just unignore someone leaving *any* channel
@@ -444,6 +442,19 @@ namespace eval plugins {
 
 plugins::unload_all
 source $settings(config-file) ;# read it before initializing everything
+  
+if {$settings(htmltitle) != "dumb"} {
+	load $settings(base-path)/htmltitle_$settings(htmltitle)/htmltitle.so
+} else {
+	# "dumb" htmltitle implementation
+	proc htmltitle {data} {
+		set data [string map {\r "" \n ""} $data]
+		if {[regexp -nocase {<\s*?title\s*?>\s*?(.*?)\s*<\s*/title\s*>} $data - title]} {
+			return [string map {&#x202a; "" &#x202c; "" &rlm; ""} [string trim $title]]; # "for YouTube", says rojo
+		}
+	}
+}
+
 
 # Initialise eggdrop stuff
 setudef flag $settings(udef-flag)
