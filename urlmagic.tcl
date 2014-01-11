@@ -65,7 +65,9 @@ variable twitter                      ; # leave this alone
 
 set settings(max-length) 80           ; # URLs longer than this are converted to tinyurl
 set settings(ignore-flags) bdkqr|dkqr ; # links posted by users with these flags are ignored
-set settings(seconds-between) 10      ; # stop listening for this many seconds after processing an address
+set settings(seconds-between-channel) 1 ; # stop listening to a channel for this many seconds after processing an URL - set to 0 to disable
+set settings(seconds-between-user) 5  ; # stop listening to a user for this many seconds after they mentioned an URL - set to 0 to disable
+set settings(url-flooding-penalty) 7  ; # ignore this many seconds each time a user who has been flooding is mentioning an URL
 set settings(timeout) 10000           ; # wait this many milliseconds for a web server to respond
 set settings(max-download) 1048576    ; # do not download pages larger than this many bytes
 set settings(max-cookie-age) 2880     ; # if cookie shelf life > this many minutes, eat it sooner
@@ -73,6 +75,8 @@ set settings(udef-flag) urlmagic      ; # .chanset #channel +urlmagic
 set settings(tinyurl-service) "http://tinyurl.com/api-create.php" ;# URL of the URL shortening service to use
 set settings(tinyurl-post-field) "url" ;# name of the POST data field to use for the URL shortening service
 set settings(urlmagic-db)	"urlmagic.db" ;# filename and path of the urlmagic DB
+set settings(user-agent) "Mozilla/5.0 (compatible; TCL [info patchlevel] HTTP library) 20110501"; # HTTP User-Agent
+set settings(url-regex) {(https?://|www\.|[a-z0-9\-]+\.[a-z]{2,4}/)\S+} ;# this regular expression is used to detect URLs. URLs which do not contain "://" will be extended to assume a default protocol of "http://"
 set twitter(username) user            ; # your Twitter username or registered email address
 set twitter(password) ""              ; # your Twitter password
 #########################
@@ -83,6 +87,7 @@ set scriptver 1.1
 variable cookies
 variable ns [namespace current]
 variable skip_sqlite3 [catch {package require sqlite3}]
+variable ignores ;# temporary ignores
 
 proc reopen_db { } {
 	# this procedure must be manually invoked via .tcl urlmagic::reopen_db if the database is moved
@@ -128,17 +133,35 @@ putlog "Use your distribution's package management system to install the depende
 }
 
 ::http::register https 443 ::tls::socket
-::http::config -useragent "Mozilla/5.0 (compatible; TCL [info patchlevel] HTTP library) 20110501"
+::http::config -useragent $settings(user-agent)
 
-proc flood_prot {tf} {
-	variable settings; variable ns
+proc unignore {nick uhost hand chan msg} {
+	# HACK: just unignore someone leaving *any* channel
+	variable ignores
+	unset ignores($uhost)
+}
 
-	if {$tf} {
-		bind pubm - * ${ns}::find_urls
-	} else {
-		unbind pubm - * ${ns}::find_urls
-		utimer $settings(seconds-between) [list ${ns}::flood_prot true]
+proc ignore {uhost chan} {
+	variable ignores; variable settings
+
+	set now [unixtime]
+
+	if {$settings(seconds-between-user) && [info exists ignores($uhost)] 
+	&& $ignores($uhost) > $now - $settings(seconds-between-user) } then {
+		incr ignores($uhost) $settings(url-flooding-penalty)
+		return 1
 	}
+
+	if {$settings(seconds-between-channel) && [info exists ignores($chan)]
+	&& $ignores($chan) > $now - $settings(seconds-between-channel) } then {
+		# introducing a penalty for a noisy channel doesn't seem particularly useful
+		return 1
+	}
+
+	set ignores($uhost) $now
+	set ignores($chan) $now
+
+	return 0
 }
 
 proc find_urls {nick uhost hand chan txt} {
@@ -147,11 +170,9 @@ proc find_urls {nick uhost hand chan txt} {
 
 	if {[matchattr $hand $settings(ignore-flags)] || ![channel get $chan $settings(udef-flag)]} { return }
 
-	set rxp {(https?://|www\.|[a-z0-9\-]+\.[a-z]{2,4}/)\S+}
+	if {[regexp -nocase $settings(url-regex) $txt url] && [string length $url] > 7} {
 
-	if {[regexp -nocase $rxp $txt url] && [string length $url] > 7} {
-
-		${ns}::flood_prot false
+		if {[ignore $uhost $chan]} return
 
 		if {![string match *://* $url]} { set url "http://$url" }
 
@@ -166,7 +187,6 @@ proc find_urls {nick uhost hand chan txt} {
 		} elseif {![string equal -nocase $url $details(url)]} {
 			set url $details(url)
 			lappend output "$details(url) ->"
-
 		}
 
 		lappend output "\002$details(title)\002"
@@ -584,7 +604,8 @@ proc tweet {what} {
 	fetch [relative $twitter_url $url] [join $postdata "&"]
 }
 
-flood_prot true
+bind part - * ${ns}::unignore
+bind pubm - * ${ns}::find_urls
 
 reopen_db ;# open the db for the first time
 
