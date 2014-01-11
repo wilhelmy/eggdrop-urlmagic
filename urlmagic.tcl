@@ -377,6 +377,7 @@ proc process_title {url} {
 namespace eval plugins {
 	set settings(base-path) "$urlmagic::settings(base-path)/plugins"
 	set ns [namespace current]
+	namespace path ::urlmagic
 
 	if {![info exists loaded_plugins]} {
 		variable loaded_plugins {}
