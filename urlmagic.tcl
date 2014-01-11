@@ -100,7 +100,7 @@ proc find_urls {nick uhost hand chan txt} {
 		process_title $url
 
 		# list used for string building
-		set title(output) [list "<$nick>" "\002$title(title)\002"]
+		set title(output) [list "<$nick>" "\002[any $title(title) "Content type: $title(content-type)"]\002"]
 
 		# Pre-String hook: Called before the string builders are invoked.
 		hook::call urlmagic <Pre-String> 
@@ -195,7 +195,6 @@ proc extract_charset {content_type charset} {
 		regexp -nocase {charset\s*=\s*(\S+?);?} $content_type -> charset
 	}
 	regsub -all -nocase {[^a-z0-9_-]} $charset "" charset
-	dccbroadcast "Charset is $charset"
 	return $charset
 }
 
@@ -232,7 +231,6 @@ proc fix_charset {data charset s_type} {
 	}
 
 	set charset [http::CharsetToEncoding $charset]
-	dccbroadcast "Charset is $charset"
 
 	if {$charset == "binary"} {return ""}
 	set data [encoding convertfrom $charset $data]
