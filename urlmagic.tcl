@@ -50,7 +50,7 @@ catch {source conf/urlmagic.conf}
 # end of user variables #
 #########################
 
-set scriptver 1.1
+set scriptver 1.1+hg
 variable cookies
 variable ns [namespace current]
 variable skip_sqlite3 [catch {package require sqlite3}]
@@ -58,7 +58,7 @@ variable ignores ;# temporary ignores
 set settings(base-path) [file dirname [info script]] 
 
 if {$settings(htmltitle) != "dumb"} {
-	catch {load tcl/urlmagic/htmltitle_$settings(htmltitle)/htmltitle.so}
+	load tcl/urlmagic/htmltitle_$settings(htmltitle)/htmltitle.so
 } else {
 	proc htmltitle {data} {
 		set data [string map {\r "" \n ""} $data]
@@ -336,11 +336,19 @@ proc fix_charset {data charset s_type} {
 	# First, Check the data for a BOM
 	if {[binary scan $data cucucucu b1 b2 b3 b4] < 4} return
 
+	set stripbytes 0
+
 	# TODO is UCS-4 supported at all?
+	# FIXME BOM stripping is currently broken. Decoding of UTF-16BE will
+	# fail, decoded UTF-16LE will contain the BOM which will confuse the
+	# title parser. I have no idea how to strip bytes from binary Tcl
+	# strings. Contact me if you do.
 	if {$b1 == 255 && $b2 == 254 || $b1 == 254 && $b2 == 255} {
-		return "unicode"
+		set charset "unicode"
+		set stripbytes 2
 	} elseif {$b1 == 239 && $b2 == 187 && $b3 == 191} {
-		return "utf-8"
+		set charset "utf-8"
+		set stripbytes 3
 	} else {
 
 	# Next, try the content type. HTML content may override this.
@@ -353,9 +361,11 @@ proc fix_charset {data charset s_type} {
 	}
 
 	set charset [http::CharsetToEncoding $charset]
+	dccbroadcast "Charset is $charset"
 
 	if {$charset == "binary"} {return ""}
-	return  [encoding convertfrom $charset $data]
+	set data [encoding convertfrom $charset $data]
+	return $data
 }
 
 proc any {a b} {
