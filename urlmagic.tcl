@@ -352,7 +352,7 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	&& $settings(content-length) <= $settings(max-download)} {
 		if {$validate} {
 			return [fetch $url "" $headers [incr iterations] 0]
-		} {
+		} else {
 			# if xhtml and charset is specified, fix the charset.
 			# otherwise, ignore charset= directive.
 			# (I guess.  Compare the source of http://fathersday.yahoo.co.jp/
@@ -373,7 +373,7 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 			}
 			return $data
 		}
-	} {
+	} else {
 		return "Content type: $settings(content-type)"
 	}
 }
@@ -395,8 +395,8 @@ proc get_title {url} {
 		set title [string map {&#x202a; "" &#x202c; "" &rlm; ""} [string trim $title]]; # for YouTube
 		regsub -all {\s+} $title { } title
 		set ret(title) [::htmlparse::mapEscapes $title]
-	} {
-		set ret(title) $data
+	} else {
+		set ret(title) "Content type: $settings(content-type)"
 	}
 
 	if {[string length $url] >= $settings(max-length)} {
