@@ -17,7 +17,7 @@
 # page titles containing unicode characters display as they should.  See      #
 # http://eggwiki.org/Utf-8 for details.                                       #
 #                                                                             #
-# Please report bugs to rojo on EFnet.                                        #
+# Please report bugs to ente on IRCnet.                                       #
 #                                                                             #
 # License                                                                     #
 #                                                                             #
@@ -42,20 +42,6 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)     #
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE  #
 # POSSIBILITY OF SUCH DAMAGE.                                                 #
-###############################################################################
-#                                                                             #
-# Change Log:                                                                 #
-#                                                                             #
-# 2013-02-08  (Version 1.1)  -ente                                            #
-#                                                                             #
-# * fixed twitter support (their HTML layout has changed a bit since 2011)    #
-#                                                                             #
-# * fixed a bug where html pages without <title> tag would result in the html #
-#   being spammed on the channel                                              #
-#                                                                             #
-# * fixed tinyurl support, use the API instead of screen scraping because it  #
-#   didn't work anymore, anyway                                               #
-#                                                                             #
 ###############################################################################
 
 namespace eval urlmagic {

@@ -1,0 +1,40 @@
+2014-????? (Version 2.0)
+
+  * Improved SQL logging, added a CGI script to display the URL history
+
+  * Fix charset detection by transferring files as binary, then applying proper
+    encoding conversion/detection
+
+  * Use the new title parser which (optionally) replaces the old/unreliable
+    regular expression title search
+
+  * Mark NSFW links with a red warning label on the channel
+
+  * Don't print the expanded URL if an URL redirects elsewhere (mostly a
+    useless feature that just adds clutter)
+
+  * Add two htmltitle implementations using real HTML/Tagsoup parsers for
+    better results
+
+  * Miscellaneous fixes by Gargaj
+
+  * Improved handling of url flooding ignores (per-user with optional flood
+    penalty and per-channel threshold instead of global)
+
+  * Actually enforce the maximum download limit
+
+  * Nitpicky things about setting certain values every time a proc is invoked
+
+2013-02-08  (Version 1.1)  -ente
+
+  * fixed twitter support (their HTML layout has changed a bit since 2011)
+
+  * fixed a bug where html pages without <title> tag would result in the html
+    being spammed on the channel
+ 
+  * fixed tinyurl support, use the API instead of screen scraping because it
+    didn't work anymore, anyway
+
+2011-09-06  (Version 1.0) -rojo
+
+  * urlmagic 1.0 as released by rojo
