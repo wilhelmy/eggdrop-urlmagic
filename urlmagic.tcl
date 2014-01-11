@@ -491,16 +491,17 @@ proc tweet {what} {
 	variable settings; variable cookies
 	if {![logged_in]} { twitter_login }
 
-	set data [fetch "https://mobile.twitter.com/"]
+	set twitter_url "https://mobile.twitter.com/compose/tweet"
+	set data [fetch $twitter_url]
 
 	if {[catch {
 		set dom [dom parse -html $data]
 		set root [$dom documentElement]
-		set forms [$root selectNodes {//form[@id='new_tweet']}]
+		set forms [$root selectNodes {//form[@class='tweetform']}]
 		set form [lindex $forms 0]
-		set inputs [$form selectNodes {//form[@id='new_tweet']//input}]
+		set inputs [$form selectNodes {//input}]
 		set url [$form getAttribute action]
-		set textareas [$form selectNodes {//form[@id='new_tweet']//textarea}]
+		set textareas [$form selectNodes {//textarea[@class='tweetbox']}]
 		set textarea [lindex $textareas 0]
 	} err]} { putlog "Damn dom.  $err"; foreach l [split $data \n] { putlog $l } }
 
@@ -516,7 +517,7 @@ proc tweet {what} {
 		lappend postdata [::http::formatQuery $name $value]
 	}
 
-	fetch $url [join $postdata "&"]
+	fetch [relative $twitter_url $url] [join $postdata "&"]
 }
 
 ${ns}::flood_prot true
