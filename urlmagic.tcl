@@ -107,6 +107,9 @@ putlog "Use your distribution's package management system to install the depende
 	}
 }
 
+::http::register https 443 ::tls::socket
+::http::config -useragent "Mozilla/5.0 (compatible; TCL [info patchlevel] HTTP library) 20110501"
+
 proc flood_prot {tf} {
 	variable settings; variable ns
 
@@ -296,12 +299,9 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	# sets settings(content-type) so calling proc knows whether to parse data
 	# returns data if content-type=text/html; returns content-type otherwise
 	variable settings; variable cookies; variable _charset
-	::http::register https 443 ::tls::socket
 	
 	if {[string length $post]} { set validate 0 }
 
-	set agent "Mozilla/5.0 (compatible; TCL [info patchlevel] HTTP library) 20110501"
-	set http [::http::config -useragent $agent]
 	set url [pct_encode_extended $url]
 	set settings(url) $url
 
