@@ -1,6 +1,8 @@
 ###############################################################################
-# urlmagic 1.0 by rojo (EFnet #wootoff)                                       #
-# Copyright 2011 Steve Church (rojo on EFnet). All rights reserved.           #
+# urlmagic 1.1 by rojo with fixes by ente                                     #
+#                                                                             #
+# Copyright (c) 2011 Steve Church (rojo on EFnet). All rights reserved.       #
+#           (c) 2013 Moritz Wilhelmy (ente on IRCnet and possibly elsewhere). #
 #                                                                             #
 # Description:                                                                #
 # Follows links posted in channel                                             #
@@ -41,6 +43,20 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH #
 # DAMAGE.                                                                     #
 ###############################################################################
+#                                                                             #
+# Change Log:                                                                 #
+#                                                                             #
+# 2013-02-08  (Version 1.1)  -ente                                            #
+#                                                                             #
+# * fixed twitter support (their HTML layout has changed a bit since 2011)    #
+#                                                                             #
+# * fixed a bug where html pages without <title> tag would result in the html #
+#   being spammed on the channel                                              #
+#                                                                             #
+# * fixed tinyurl support, use the API instead of screen scraping because it  #
+#   didn't work anymore, anyway                                               #
+#                                                                             #
+###############################################################################
 
 namespace eval urlmagic {
 
@@ -63,7 +79,7 @@ set twitter(password) ""              ; # your Twitter password
 # end of user variables #
 #########################
 
-set scriptver 1.0
+set scriptver 1.1
 variable cookies
 variable ns [namespace current]
 variable skip_sqlite3 [catch {package require sqlite3}]
