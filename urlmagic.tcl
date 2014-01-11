@@ -454,12 +454,14 @@ proc tinyurl {url} {
 	variable settings;
 	set result {}
 	set query [::http::formatQuery $settings(tinyurl-post-field) $url]
-	set tok [::http::geturl $settings(tinyurl-service) -query $query -timeout $settings(timeout)]
-	upvar #0 $tok state
-	if {$state(status) == "ok" && $state(type) == "text/plain"} {
-		set result [lindex [split $state(body) \n] 0]
+	catch {
+		set tok [::http::geturl $settings(tinyurl-service) -query $query -timeout $settings(timeout)]
+		upvar #0 $tok state
+		if {$state(status) == "ok" && $state(type) == "text/plain"} {
+			set result [lindex [split $state(body) \n] 0]
+		}
+		::http::cleanup $tok
 	}
-	::http::cleanup $tok
 	return $result
 }
 
