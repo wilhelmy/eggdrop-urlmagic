@@ -1,0 +1,13 @@
+urlmagic by rojo and ente
+
+Description:
+
+Does magic things with URLs:
+  * Follows links posted in channel
+  * If content-type ~ text/html and <title>content exists</title> display title
+  * Otherwise, display content-type
+  * If url length > threshold, fetch and display tinyurl
+  * If redirect, display final destination URL
+  * Optionally record all this bullshit to your Twitter page or a SQLite database
+
+Please report bugs to ente on IRCnet.
