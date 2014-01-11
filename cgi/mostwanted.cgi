@@ -197,6 +197,7 @@ puts [html::head "$botname's most wanted"]
 puts [html::bodyTag]
 
 proc header {view} {
+	global botname
 	if {$view eq "mostwanted"} {
 		puts [html::h1 "$botname's 50 most wanted links"]
 	} elseif {$view eq "recent"} {
