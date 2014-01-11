@@ -54,6 +54,8 @@ set settings(timeout) 10000           ; # wait this many milliseconds for a web 
 set settings(max-download) 1048576    ; # do not download pages larger than this many bytes
 set settings(max-cookie-age) 2880     ; # if cookie shelf life > this many minutes, eat it sooner
 set settings(udef-flag) urlmagic      ; # .chanset #channel +urlmagic
+set settings(tinyurl-service) "http://tinyurl.com/api-create.php" ;# URL of the URL shortening service to use
+set settings(tinyurl-post-field) "url" ;# name of the POST data field to use for the URL shortening service
 set twitter(username) user            ; # your Twitter username or registered email address
 set twitter(password) ""              ; # your Twitter password
 
@@ -433,15 +435,16 @@ proc strip_codes {what} {
 }
 
 proc tinyurl {url} {
-	variable settings
-	set data [split [fetch "http://tinyurl.com/create.php" [::http::formatQuery "url" $url]] \n]
-	for {set i [llength $data]} {$i >= 0} {incr i -1} {
-		putlog [lindex $data $i]
-		if {[regexp {href="http://tinyurl\.com/\w+"} [lindex $data $i] url]} {
-			return [string map { {href=} "" \" "" } $url]
-		}
+	variable settings;
+	set result {}
+	set query [::http::formatQuery $settings(tinyurl-post-field) $url]
+	set tok [::http::geturl $settings(tinyurl-service) -query $query -timeout $settings(timeout)]
+	upvar #0 $tok state
+	if {$state(status) == "ok" && $state(type) == "text/plain"} {
+		set result [lindex [split $state(body) \n] 0]
 	}
-	return ""
+	::http::cleanup $tok
+	return $result
 }
 
 proc logged_in {} {
