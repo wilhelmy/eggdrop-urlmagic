@@ -65,20 +65,22 @@ variable twitter                      ; # leave this alone
 
 set settings(max-length) 80           ; # URLs longer than this are converted to tinyurl
 set settings(ignore-flags) bdkqr|dkqr ; # links posted by users with these flags are ignored
-set settings(seconds-between-channel) 1 ; # stop listening to a channel for this many seconds after processing an URL - set to 0 to disable
-set settings(seconds-between-user) 5  ; # stop listening to a user for this many seconds after they mentioned an URL - set to 0 to disable
-set settings(url-flooding-penalty) 7  ; # ignore this many seconds each time a user who has been flooding is mentioning an URL
+set settings(seconds-between) 10      ; # stop listening for this many seconds after processing an address
+set settings(seconds-between-user) 2  ; # stop listening to a user for this many seconds after they mentioned an URL
 set settings(timeout) 10000           ; # wait this many milliseconds for a web server to respond
 set settings(max-download) 1048576    ; # do not download pages larger than this many bytes
 set settings(max-cookie-age) 2880     ; # if cookie shelf life > this many minutes, eat it sooner
 set settings(udef-flag) urlmagic      ; # .chanset #channel +urlmagic
-set settings(tinyurl-service) "http://tinyurl.com/api-create.php" ;# URL of the URL shortening service to use
-set settings(tinyurl-post-field) "url" ;# name of the POST data field to use for the URL shortening service
-set settings(urlmagic-db)	"urlmagic.db" ;# filename and path of the urlmagic DB
+set settings(tinyurl-service) "tinyurl.tcl" ;# Name of shortening service to use. Must be a TCL script that contains a tinyurl proc
+set settings(urlmagic-db) "urlmagic.db"
 set settings(user-agent) "Mozilla/5.0 (compatible; TCL [info patchlevel] HTTP library) 20110501"; # HTTP User-Agent
 set settings(url-regex) {(https?://|www\.|[a-z0-9\-]+\.[a-z]{2,4}/)\S+} ;# this regular expression is used to detect URLs. URLs which do not contain "://" will be extended to assume a default protocol of "http://"
 set twitter(username) user            ; # your Twitter username or registered email address
 set twitter(password) ""              ; # your Twitter password
+set twitter(tweet-urls) no            ; # tweet urls mentioned on the channel to twitter? allows disabling the url tweeting part if you just want to use the tweet proc in another script
+
+catch {source conf/urlmagic.conf} ;# try loading this config file which may overwrite the values defined above
+
 #########################
 # end of user variables #
 #########################
@@ -88,10 +90,11 @@ variable cookies
 variable ns [namespace current]
 variable skip_sqlite3 [catch {package require sqlite3}]
 variable ignores ;# temporary ignores
+set settings(base-path) [file dirname [info script]] 
 
 proc reopen_db { } {
 	# this procedure must be manually invoked via .tcl urlmagic::reopen_db if the database is moved
-	# while messing with the database, use .set urlmagic::skip_sqlite3 1 to disable database support until you're done
+	# while messing with the database, use .set urlmagic::skip_sqlite3 1 to disable writes to the database until you're done.
 	variable skip_sqlite3;
 	variable settings;
 	variable ns;
@@ -105,6 +108,7 @@ proc reopen_db { } {
 	if {[llength [info commands ${ns}::db]]} {
 		db close
 	}
+
 	sqlite3 ${ns}::db $settings(urlmagic-db)
 	init_db
 }
@@ -138,7 +142,7 @@ putlog "Use your distribution's package management system to install the depende
 proc unignore {nick uhost hand chan msg} {
 	# HACK: just unignore someone leaving *any* channel
 	variable ignores
-	unset ignores($uhost)
+	catch { unset ignores($uhost) }
 }
 
 proc ignore {uhost chan} {
@@ -146,7 +150,7 @@ proc ignore {uhost chan} {
 
 	set now [unixtime]
 
-	if {$settings(seconds-between-user) && [info exists ignores($uhost)] 
+	if {$settings(seconds-between-user) && [info exists ignores($uhost)]
 	&& $ignores($uhost) > $now - $settings(seconds-between-user) } then {
 		incr ignores($uhost) $settings(url-flooding-penalty)
 		return 1
@@ -174,10 +178,11 @@ proc find_urls {nick uhost hand chan txt} {
 
 		if {[ignore $uhost $chan]} return
 
-		if {![string match *://* $url]} { set url "http://$url" }
+		set url_complete [string match *://* $url]
+		if {!$url_complete} { set url "http://$url" }
 
 		# $details(url, content-length, tinyurl [where $url length > max], title, error [boolean])
-		array set details [${ns}::get_title $url]
+		array set details [get_title $url]
 
 		set output [list PRIVMSG $chan ":<$nick>"]
 
@@ -187,35 +192,24 @@ proc find_urls {nick uhost hand chan txt} {
 		} elseif {![string equal -nocase $url $details(url)]} {
 			set url $details(url)
 			lappend output "$details(url) ->"
+
+		} elseif {!$url_complete} {
+			lappend output "$url ->"
 		}
 
-		lappend output "\002$details(title)\002"
+		if {[info exists details(title)]} {
+			lappend output "\002$details(title)\002"
+			record_history $url $nick $chan $details(title) $settings(content-type)
+		} else {
+			lappend output "\002Content type: $settings(content-type)\002"
+			record_history $url $nick $chan "" $settings(content-type)
+		}
 
 		if {[info exists details(content-length)]} {
 			lappend output "\($details(content-length)\)"
 		}
 
 		puthelp [join $output]
-
-		if {[string length $twitter(username)] && [string length $twitter(password)] && !$details(error)} {
-
-			set post "<$nick> $url -> $details(title)"
-
-			if {$skip_sqlite3} {
-				set hist 0
-			} else {
-				set hist [${ns}::query_history $url]
-				if {!$hist} { ${ns}::record_history $url }
-			}
-
-			if {$hist} { return }
-
-			# set post "<$nick> [${ns}::strip_codes $txt]"
-			# ${ns}::tweet [string range $post 0 140]
-
-			if {[catch {${ns}::tweet [string range $post 0 139]} err]} { putlog "Tweet fail.  $err" } { putlog "Tweet success." }
-		}
-
 	}
 }
 
@@ -231,6 +225,8 @@ proc init_db {} {
 		    , last_mentioned    INTEGER DEFAULT 0    -- unix time when it was last mentioned
 		    , last_mentioned_on TEXT DEFAULT ""      -- channel the URL was last mentioned on
 		    , mention_count     INTEGER DEFAULT 0    -- number of times it was mentioned
+		    , content_type      TEXT
+		    , html_title        TEXT
 		    );
 	}
 }
@@ -239,24 +235,31 @@ proc query_history {url} {
 	variable skip_sqlite3;
 	if {$skip_sqlite3} return
 
-	db eval {SELECT COUNT(*) FROM urls WHERE url=:url} {
-		return ${COUNT(*)}
+	db eval {SELECT COUNT(*) AS count FROM urls WHERE url=:url} {
+		return $count
 	}
 }
 
-proc record_history {url nick chan} {
+proc record_history {url nick chan title ctype} {
 	variable skip_sqlite3;
 	if {$skip_sqlite3} return
 
+	if {! [string length $title]} {
+		unset title ;# HACK: insert NULL in case there is no title
+	}
+
 	db eval {
 		INSERT OR IGNORE INTO urls(url, mention_count) VALUES(:url, 0); -- initialise if it doesn't yet exist
-		UPDATE urls SET
-			last_mentioned_by = :nick,
-			last_mentioned_on = :chan,
-			last_mentioned    = strftime('%s','now'), 
-			mention_count     = mention_count + 1
-		WHERE url = :url;
+	        UPDATE urls SET
+	                last_mentioned_by = :nick,
+	                last_mentioned_on = :chan,
+	                content_type      = :ctype,
+	                html_title        = :title,
+	                last_mentioned    = strftime('%s','now'),
+	                mention_count     = mention_count + 1
+	        WHERE url = :url;
 	}
+
 }
 
 proc update_cookies {tok} {
@@ -338,6 +341,8 @@ foreach cc {af sq eu ca da nl en fo fi fr gl de is ga it no pt gd es sv} {
 foreach cc {hr cs hu pl ro sr sk sl} {
 	set _charset($cc) iso8859-2
 }
+
+set _charset(jp) euc-jp; # yay, nonstandard bullshit
 set _charset(en) utf-8; # assume utf-8 if charset not specified and lang="en"
 variable _charset
 
@@ -397,6 +402,7 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	array set raw_meta $state(meta)
 	foreach {name val} [array get raw_meta] { set meta([string tolower $name]) $val }
 	unset raw_meta
+	# $state(status) == "toobig" in case the file wasn't downloaded completely because it was too big
 
 	::http::cleanup $http
 
@@ -421,30 +427,37 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 		set settings(content-length) 0
 	}
 
+	set charset1 ""
 	if {[info exists meta(content-type)]} {
 		set settings(content-type) [lindex [split $meta(content-type) ";"] 0]
-	} elseif {[info exists meta(x-aspnet-version)]} {
-		set settings(content-type) "text/html"
+		if {[regexp {\ycharset=([\w\-]+)} $meta(content-type) -> charset]} {
+			set charset1 $charset
+		}
+#	elseif {[info exists meta(x-aspnet-version)]}
+#		set settings(content-type) "text/html"
 	} else {
 		set settings(content-type) "unknown"
 	}
 
+	#if {[string match -nocase $settings(content-type) "text/html"]\
+	&& $settings(content-length) <= $settings(max-download)} {}
 	if {[string match -nocase $settings(content-type) "text/html"]\
-	&& $settings(content-length) <= $settings(max-download)} {
+	    || [string match -nocase $settings(content-type) "application/xhtml+xml"]} {
 		if {$validate} {
 			return [fetch $url "" $headers [incr iterations] 0]
 		} else {
-			# if xhtml and charset is specified, fix the charset.
-			# otherwise, ignore charset= directive.
-			# (I guess.  Compare the source of http://fathersday.yahoo.co.jp/
-			# versus http://www.clevo.com.tw/tw/ for example.  The Yahoo! site
-			# encoding does not need re-encoded; whereas the Clevo site does.)
-			if {[regexp -nocase {<html[^>]+xhtml} $data]} {
-				regexp -nocase {\ycharset=\"?\'?([\w\-]+)} $data - charset
-			}
+			# if it already exists, the charset specified in html takes precedence (mw)
+			regexp -nocase {\ycharset=\"?\'?([\w\-]+)} $data -> charset
 			if {[info exists charset]} {
 				set charset [string map {iso- iso} [string tolower $charset]]
-				if {[lsearch [encoding names] $charset] < 0} { unset charset }
+				set log "url: '$url', charset is '$charset', charset1 is '$charset1'"
+				if {[lsearch [encoding names] $charset] < 0} {
+					unset charset;
+					set log "$log; and was unset because it doesn't exist"
+				}
+				putlog $log
+			} else { #DEBUG
+				putlog "url: '$url' has no charset"
 			}
 			if {![info exists charset] && [regexp -nocase {\ylang=\"?\'?(\w{2})} $data - lang]} {
 				set charset $_charset([string tolower $lang])
@@ -459,11 +472,16 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	}
 }
 
+source $settings(base-path)/$settings(tinyurl-service)
+
+proc nop args {}
+
 proc get_title {url} {
 #	returns $ret(url, content-length, tinyurl [where $url length > max], title)
-	variable settings; variable ns
+	variable settings
 
-	set data [string map [list \r "" \n ""] [fetch $url]]
+	#set data [string map [list \r "" \n ""] [fetch $url]]
+	set data [string map {\r "" \n ""} [fetch $url]]
 
 	if {![string equal $url $settings(url)]} {
 		set url $settings(url)
@@ -472,12 +490,11 @@ proc get_title {url} {
  	set ret(url) $url
 	set content_length $settings(content-length)
 	set title ""
-	if {[regexp -nocase {<title[^>]*>(.*?)</title>} $data - title]} {
+	#{<title[^>]*>\s*(.*)\s*<\s*/\s*title[^>]*>}
+	if {[regexp -nocase {<\s*?title\s*?>\s*?(.*?)\s*<\s*/title\s*>} $data - title]} {
 		set title [string map {&#x202a; "" &#x202c; "" &rlm; ""} [string trim $title]]; # for YouTube
 		regsub -all {\s+} $title { } title
-		set ret(title) [::htmlparse::mapEscapes $title]
-	} else {
-		set ret(title) "Content type: $settings(content-type)"
+		set ret(title) [string map {\r "" \n ""} [::htmlparse::mapEscapes $title]]
 	}
 
 	if {[string length $url] >= $settings(max-length)} {
@@ -489,11 +506,9 @@ proc get_title {url} {
 	}
 
 	return [array get ret]
-
 }
 
 proc bytes_to_human {bytes} {
-	variable ns
 	if {$bytes > 1073741824} {
 		return "[make_round $bytes 1073741824] GB"
 	} elseif {$bytes > 1048576} {
@@ -503,29 +518,14 @@ proc bytes_to_human {bytes} {
 	} else { return "$bytes B" }
 }
 
-proc make_round {num denom} {
+proc make_round {num denom} { # FIXME: what does this even do?
 	global tcl_precision
 	set expr {1.1 + 2.2 eq 3.3}; while {![catch { incr tcl_precision }]} {}; while {![expr $expr]} { incr tcl_precision -1 }
 	return [regsub {00000+[1-9]} [expr {round([expr {100.0 * $num / $denom}]) * 0.01}] ""]
 }
 
-proc strip_codes {what} {
+proc strip_codes {what} { #FIXME unused?
 	return [regsub -all -- {\002|\037|\026|\003(\d{1,2})?(,\d{1,2})?} $what ""]
-}
-
-proc tinyurl {url} {
-	variable settings;
-	set result {}
-	set query [::http::formatQuery $settings(tinyurl-post-field) $url]
-	catch {
-		set tok [::http::geturl $settings(tinyurl-service) -query $query -timeout $settings(timeout)]
-		upvar #0 $tok state
-		if {$state(status) == "ok" && $state(type) == "text/plain"} {
-			set result [lindex [split $state(body) \n] 0]
-		}
-		::http::cleanup $tok
-	}
-	return $result
 }
 
 proc logged_in {} {
@@ -605,6 +605,8 @@ proc tweet {what} {
 }
 
 bind part - * ${ns}::unignore
+bind sign - * ${ns}::unignore
+# TODO: cron-bind that automatically deletes stale ignores
 bind pubm - * ${ns}::find_urls
 
 reopen_db ;# open the db for the first time
