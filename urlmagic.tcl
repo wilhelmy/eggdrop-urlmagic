@@ -368,7 +368,7 @@ proc extract_charset {content_type charset} {
 	} else {
 		regexp -nocase {charset\s*=\s*(\S+?);?} $content_type -> charset
 	}
-	set charset [string map {\" {} ' {}} $charset]
+	regsub -all -nocase {[^a-z0-9_-]} $charset "" charset
 	dccbroadcast "Charset is $charset"
 	return $charset
 }
@@ -397,7 +397,10 @@ proc fix_charset {data charset s_type} {
 	set charset [extract_charset $data $charset]
 	}
 
-	return  [encoding convertfrom [http::CharsetToEncoding $charset] $data]
+	set charset [http::CharsetToEncoding $charset]
+
+	if {$charset == "binary"} {return ""}
+	return  [encoding convertfrom $charset $data]
 }
 
 proc any {a b} {
