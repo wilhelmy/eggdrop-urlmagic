@@ -475,7 +475,7 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	}
 }
 
-source $settings(base-path)/$settings(tinyurl-service)
+catch {source $settings(base-path)/$settings(tinyurl-service)}
 
 proc nop args {}
 
