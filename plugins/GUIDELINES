@@ -1,0 +1,29 @@
+Programming guidelines for plugins:
+
+  * You should document which eggdrop events and hooks your plugin uses or
+    exports. Your subject/object names (which only serve to identify the event)
+    should be urlmagic::plugin::<name>. If you define any, you should also
+    document how many and what kind of parameters they take.
+
+  * Do not execute code with side effects directly in the namespace. Instead,
+    make two functions init_plugin and deinit_plugin in the
+
+      urlmagic::plugin::<name>
+
+    namespace so that plugins can be cleanly unloaded again. In these
+    functions, any calls to hook::bind or eggdrop's bind and calls to
+    hook::forget/eggdrop's "unbind" should take place, as well as
+    opening/closing of e.g. database files or ports.
+
+  * Use namespace path ::urlmagic to make urlmagic's functions available in
+    your namespace.
+
+  * Separate settings from code so users know where they can stop reading
+
+  * Use the urlmagic::warn function to make the user aware of plugin issues
+    like missing libraries
+
+  * add a variable no_settings to your plugin namespace if you have no user
+    settings.
+
+  * Take a look at sqlite for a relatively well documented example plugin.

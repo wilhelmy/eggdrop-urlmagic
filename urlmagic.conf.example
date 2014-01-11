@@ -1,0 +1,74 @@
+#! tclsh
+################################################################################
+#         Start of user variables, copy things below this line into            #
+#                   EGGDROP_BASEDIR/conf/urlmagic.tcl                          #
+#   e.g. by executing cat urlmagic.conf.example > ~/eggdrop/conf/urlmagic.tcl  #
+################################################################################
+
+namespace eval ::urlmagic {
+
+# links posted by users with these flags are ignored
+set settings(ignore-flags) bdkqr|dkqr
+
+# stop listening for this many seconds after processing an address
+set settings(seconds-between) 10
+
+# stop listening to a user for this many seconds after they mentioned an URL
+set settings(seconds-between-user) 2
+
+# wait this many milliseconds for a web server to respond
+set settings(timeout) 10000
+
+# do not download pages larger than this many bytes
+set settings(max-download) 1048576
+
+# if cookie shelf life > this many minutes, eat it sooner
+set settings(max-cookie-age) 2880
+
+# .chanset #channel +urlmagic -- change this if you want to use a different
+# flag to enable urlmagic on a channel.
+set settings(udef-flag) urlmagic
+
+# HTTP User-Agent which will be sent with each request
+set settings(user-agent) "Mozilla/5.0 (compatible; TCL [info patchlevel] HTTP library) 20110501"
+
+# this regular expression is used to detect URLs. URLs which do not contain
+# "://" will be extended to assume a default protocol of "http://"
+set settings(url-regex) {(https?://|www\.|[a-z0-9\-]+\.[a-z]{2,4}/)\S+}
+
+# TODO pluginify
+set twitter(username) user            ; # your Twitter username or registered email address
+set twitter(password) ""              ; # your Twitter password
+set twitter(tweet-urls) no            ; # tweet urls mentioned on the channel to twitter? allows disabling the url tweeting part if you just want to use the tweet proc in another script
+
+# After someone posted an URL, ignore them for this many seconds. Set to 0 to disable
+set settings(seconds-between-user) 1
+
+# Penalize users flooding URLs for this many seconds
+set settings(url-flooding-penalty) 3
+
+# Ignore URLs on a busy channel for this many seconds
+set settings(seconds-between-channel) 1
+
+# Add headers you want to send on requests. Accept-Language tells the server
+# that you prefer english versions of any document over any other language,
+# even if your IP is not geographically located in an English-speaking country.
+# See http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1
+set settings(default-headers)        {Accept-Language "en, *;q=0.9"}
+
+# Uncomment either of the following lines, gumbo is recommended but will
+# require you to install the Google gumbo library and to compile a Tcl module
+# in the subdirectory "htmltitle_gumbo". arabica is another such module using
+# the arabica HTML/tagsoup parser. Finally, "dumb" is an implementation written
+# in Tcl, which uses a simple regex. This doesn't always work, but should be
+# okay most of the time. Use this if you can't compile code for some reason.
+set settings(htmltitle) "gumbo"
+#set settings(htmltitle) "arabica"
+#set settings(htmltitle) "dumb"
+
+# Here you can specify which plugins to load. See the plugins directory for a
+# list of plugins. They each have a description and maybe settings which you
+# should also copy to the config file.
+set settings(plugins) {sqlite}
+
+}
