@@ -85,19 +85,22 @@ variable ns [namespace current]
 variable skip_sqlite3 [catch {package require sqlite3}]
 
 proc reopen_db { } {
-        # this procedure must be manually invoked via .tcl urlmagic::reopen_db if the database is moved
-        # while messing with the database, use .set urlmagic::skip_sqlite3 1 to disable writes to the database until you're done.
+	# this procedure must be manually invoked via .tcl urlmagic::reopen_db if the database is moved
+	# while messing with the database, use .set urlmagic::skip_sqlite3 1 to disable database support until you're done
 	variable skip_sqlite3;
 	variable settings;
 	variable ns;
 
-        if {$skip_sqlite3} return;
+	if {! [string length $settings(urlmagic-db)]} {
+		set skip_sqlite3 1
+	}
 
-        if {[llength [info commands ${ns}::db]]} {
-                db close
-        }
-        sqlite3 urlmagic_db $settings(urlmagic-db)
-	rename urlmagic_db ${ns}::db
+	if {$skip_sqlite3} return;
+
+	if {[llength [info commands ${ns}::db]]} {
+		db close
+	}
+	sqlite3 ${ns}::db $settings(urlmagic-db)
 	init_db
 }
 
@@ -197,6 +200,9 @@ proc find_urls {nick uhost hand chan txt} {
 }
 
 proc init_db {} {
+	variable skip_sqlite3;
+	if {$skip_sqlite3} return
+
 	db eval {
 	CREATE TABLE IF NOT EXISTS
 		urls( id                INTEGER PRIMARY KEY AUTOINCREMENT
@@ -210,17 +216,20 @@ proc init_db {} {
 }
 
 proc query_history {url} {
+	variable skip_sqlite3;
+	if {$skip_sqlite3} return
+
 	db eval {SELECT COUNT(*) FROM urls WHERE url=:url} {
 		return ${COUNT(*)}
 	}
 }
 
 proc record_history {url nick chan} {
-	catch {db eval {
-		INSERT INTO urls VALUES(NULL, :url, NULL, NULL, NULL, NULL); -- initialise if it doesn't yet exist; throws an error otherwise, hence the catch (bit ugly, but it works)
-	}}
+	variable skip_sqlite3;
+	if {$skip_sqlite3} return
 
 	db eval {
+		INSERT OR IGNORE INTO urls(url, mention_count) VALUES(:url, 0); -- initialise if it doesn't yet exist
 		UPDATE urls SET
 			last_mentioned_by = :nick,
 			last_mentioned_on = :chan,
@@ -456,7 +465,7 @@ proc get_title {url} {
 	}
 
 	if {$content_length} {
-		set ret(content-length) [${ns}::bytes_to_human $content_length]
+		set ret(content-length) [bytes_to_human $content_length]
 	}
 
 	return [array get ret]
@@ -466,11 +475,11 @@ proc get_title {url} {
 proc bytes_to_human {bytes} {
 	variable ns
 	if {$bytes > 1073741824} {
-		return "[${ns}::make_round $bytes 1073741824] GB"
+		return "[make_round $bytes 1073741824] GB"
 	} elseif {$bytes > 1048576} {
-		return "[${ns}::make_round $bytes 1048576] MB"
+		return "[make_round $bytes 1048576] MB"
 	} elseif {$bytes > 1024} {
-		return "[${ns}::make_round $bytes 1024] KB"
+		return "[make_round $bytes 1024] KB"
 	} else { return "$bytes B" }
 }
 
@@ -575,7 +584,7 @@ proc tweet {what} {
 	fetch [relative $twitter_url $url] [join $postdata "&"]
 }
 
-${ns}::flood_prot true
+flood_prot true
 
 reopen_db ;# open the db for the first time
 
