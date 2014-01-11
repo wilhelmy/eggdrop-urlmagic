@@ -292,6 +292,14 @@ foreach cc {hr cs hu pl ro sr sk sl} {
 }
 set _charset(en) utf-8; # assume utf-8 if charset not specified and lang="en"
 variable _charset
+
+proc progresshandler {tok total current} {
+	variable settings
+	if {$current >= $settings(max-download)} {
+		::http::reset $tok toobig
+	}
+}
+
 proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	# follows redirects, sets cookies and allows post data
 	# sets settings(content-length) if provided by server; 0 otherwise
@@ -313,11 +321,18 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 		}
 	}
 
-	set command [list ::http::geturl $url]
-	if {[string length $post]} { lappend command -query $post }
-	if {[string length $headers]} { lappend command -headers $headers }
-	lappend command -timeout $settings(timeout)
-	if {$validate} { lappend command -validate 1 }
+	set command [list ::http::geturl $url             \
+	                  -timeout $settings(timeout)     \
+	                  -validate $validate             \
+	                  -progress ${ns}::progresshandler]
+
+	if {[string length $post]} {
+		lappend command -query $post
+	}
+
+	if {[string length $headers]} {
+		lappend command -headers $headers
+	}
 
 	if {[catch $command http]} {
 		if {[catch {set data "Error [::http::ncode $http]: [::http::error $http]"}]} {
