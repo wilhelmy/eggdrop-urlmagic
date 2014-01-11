@@ -329,9 +329,11 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 		}
 	}
 
+	set settings(content-length) 0
 	if {[info exists meta(content-length)]} {
 		set settings(content-length) [any $meta(content-length) 0]
 	}
+	set settings(content-type) "unknown"
 	if {[info exists meta(content-type)]} {
 		set settings(content-type) [any [lindex [split $meta(content-type) ";"] 0] "unknown"]
 	}
@@ -347,8 +349,6 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 		return "Content type: $settings(content-type)"
 	}
 }
-
-#catch {source $settings(base-path)/$settings(tinyurl-service)}
 
 proc process_title {url} {
 #	returns $ret(url, content-length, tinyurl [where $url length > max], title)
@@ -455,7 +455,6 @@ if {$settings(htmltitle) != "dumb"} {
 		}
 	}
 }
-
 
 # Initialise eggdrop stuff
 setudef flag $settings(udef-flag)
