@@ -2,7 +2,7 @@
 # urlmagic 1.1 by rojo with fixes by ente                                     #
 #                                                                             #
 # Copyright (c) 2011 Steve Church (rojo on EFnet). All rights reserved.       #
-#           (c) 2013 Moritz Wilhelmy (ente on IRCnet and possibly elsewhere). #
+#           (c) 2013-2014 Moritz Wilhelmy (ente on IRCnet and elsewhere).     #
 #                                                                             #
 # Description:                                                                #
 # Follows links posted in channel                                             #
@@ -75,6 +75,7 @@ set settings(tinyurl-service) "tinyurl.tcl" ;# Name of shortening service to use
 set settings(urlmagic-db) "urlmagic.db"
 set settings(user-agent) "Mozilla/5.0 (compatible; TCL [info patchlevel] HTTP library) 20110501"; # HTTP User-Agent
 set settings(url-regex) {(https?://|www\.|[a-z0-9\-]+\.[a-z]{2,4}/)\S+} ;# this regular expression is used to detect URLs. URLs which do not contain "://" will be extended to assume a default protocol of "http://"
+set settings(url-regex)  ;# this regular expression is used to detect URLs. URLs which do not contain "://" will be extended to assume a default protocol of "http://"
 set twitter(username) user            ; # your Twitter username or registered email address
 set twitter(password) ""              ; # your Twitter password
 set twitter(tweet-urls) no            ; # tweet urls mentioned on the channel to twitter? allows disabling the url tweeting part if you just want to use the tweet proc in another script
@@ -82,7 +83,27 @@ set settings(seconds-between-user) 1 ;# After someone posted an URL, ignore them
 set settings(url-flooding-penalty) 3 ;# Penalize users flooding URLs for this many seconds
 set settings(seconds-between-channel) 1 ;# Ignore URLs on a busy channel for this many seconds
 
-catch {source conf/urlmagic.conf} ;# try loading this config file which may overwrite the values defined above
+# Add headers you want to send on requests. Accept-Language tells the server
+# that you prefer english versions of any document over any other language,
+# even if your IP is not geographically located in an English-speaking country.
+# See http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1
+set settings(default-headers)        {Accept-Language "en, *;q=0.9"}
+
+# Uncomment either of the following lines, gumbo is recommended but will
+# require you to install the Google gumbo library and to compile a Tcl module
+# in the subdirectory "htmltitle_gumbo". arabica is another such module using
+# the arabica HTML/tagsoup parser. Finally, "dumb" is an implementation written
+# in Tcl, which uses a simple regex. This doesn't always work, but should be
+# okay most of the time. Use this if you can't compile code for some reason.
+set settings(htmltitle) "gumbo"
+#set settings(htmltitle) "arabica"
+#set settings(htmltitle) "dumb"
+
+# Try loading this config file which may override the values defined above. You
+# can and should copy your custom settings to a separate file so they won't be
+# overwritten on future urlmagic updates.
+catch {source conf/urlmagic.conf} 
+
 
 #########################
 # end of user variables #
@@ -94,6 +115,17 @@ variable ns [namespace current]
 variable skip_sqlite3 [catch {package require sqlite3}]
 variable ignores ;# temporary ignores
 set settings(base-path) [file dirname [info script]] 
+
+if {$settings(htmltitle) != "dumb"} {
+	catch {load tcl/urlmagic/htmltitle_$settings(htmltitle)/htmltitle.so}
+} else {
+	proc htmltitle {data} {
+		set data [string map {\r "" \n ""} $data]
+		if {[regexp -nocase {<\s*?title\s*?>\s*?(.*?)\s*<\s*/title\s*>} $data - title]} {
+			return [string map {&#x202a; "" &#x202c; "" &rlm; ""} [string trim $title]]; # "for YouTube", says rojo
+		}
+	}
+}
 
 proc reopen_db { } {
 	# this procedure must be manually invoked via .tcl urlmagic::reopen_db if the database is moved
@@ -118,11 +150,11 @@ proc reopen_db { } {
 
 setudef flag $settings(udef-flag)
 
-foreach lib {http htmlparse tls tdom} {
+foreach lib {http tls tdom} {
 	if {[catch {package require $lib}]} {
 		putlog "\00304urlmagic fail\003: Missing library \00308$lib\003.
 
-urlmagic requires packages \00308http\00315\003, \00308htmlparse\00315\003, \00308tdom\00315\003, \00308tls\00315\003, and (optionally) \00308sqlite3\00315\003.  The http and htmlparse libraries are included in tcllib.
+urlmagic requires packages \00308http\00315\003, \00308tdom\00315\003, \00308tls\00315\003, and (optionally) \00308sqlite3\00315\003.  The http library is included in tcllib.
 "
 putlog "Use your distribution's package management system to install the dependencies as appropriate.
 
@@ -171,6 +203,20 @@ proc ignore {uhost chan} {
 	return 0
 }
 
+proc is_nsfw {hand txt} {
+	# first off, anybody can tag their message as SFW.
+	if {[regexp -nocase {\ysfw\y} $txt]} {
+		return 0
+	}
+	# for people who don't have the +N(SFW) attribute set, assume SFW by
+	# default, unless the text matches nsfw.
+	if {[regexp -nocase {\ynsf[wl]\y} $txt] || [matchattr $hand +N]} {
+		return 1
+	}
+	# sfw otherwise.
+	return 0
+}
+
 proc find_urls {nick uhost hand chan txt} {
 
 	variable settings; variable twitter; variable skip_sqlite3; variable ns
@@ -181,6 +227,8 @@ proc find_urls {nick uhost hand chan txt} {
 
 		if {[ignore $uhost $chan]} return
 
+		# FIXME should this be just // to account for URLs like //imgur.com/ where the protocol is implicit?
+		# In any case, wouldn't work as expected. rewrite.
 		set url_complete [string match *://* $url]
 		if {!$url_complete} { set url "http://$url" }
 
@@ -188,14 +236,13 @@ proc find_urls {nick uhost hand chan txt} {
 		array set details [get_title $url]
 
 		set output [list PRIVMSG $chan ":<$nick>"]
+		if {[is_nsfw $hand $txt]} {
+			lappend output "\002\0034(NSFW)\003\002"
+		}
 
 		if {[info exists details(tinyurl)]} {
 			set url $details(tinyurl)
 			lappend output "$details(tinyurl) ->"
-		} elseif {![string equal -nocase $url $details(url)]} {
-			set url $details(url)
-			lappend output "$details(url) ->"
-
 		} elseif {!$url_complete} {
 			lappend output "$url ->"
 		}
@@ -234,15 +281,6 @@ proc init_db {} {
 	}
 }
 
-proc query_history {url} {
-	variable skip_sqlite3;
-	if {$skip_sqlite3} return
-
-	db eval {SELECT COUNT(*) AS count FROM urls WHERE url=:url} {
-		return $count
-	}
-}
-
 proc record_history {url nick chan title ctype} {
 	variable skip_sqlite3;
 	if {$skip_sqlite3} return
@@ -265,9 +303,11 @@ proc record_history {url nick chan title ctype} {
 
 }
 
+# TODO: rewrite cookie code.
 proc update_cookies {tok} {
 	variable cookies; variable settings; variable ns
-	upvar \#0 $tok state
+
+	upvar #0 $tok state
 	set domain [lindex [split $state(url) /] 2]
 	if {![info exists cookies($domain)]} { set cookies($domain) [list] }
 	foreach {name value} $state(meta) {
@@ -301,7 +341,7 @@ proc update_cookies {tok} {
 		}
 	}
 }
-
+ 
 proc expire_cookie {domain cookie_name} {
 	variable cookies
 	if {![info exists cookies($domain)]} { return }
@@ -311,15 +351,20 @@ proc expire_cookie {domain cookie_name} {
 	if {![llength $cookies($domain)]} { unset cookies($domain) }
 }
 
+# Lookup table for non-printable characters which need to be URL-encoded
+variable enc [list { } +]
+for {set i 0} {$i < 256} {incr i} {
+	if {$i > 32 && $i < 127} { continue }
+	lappend enc [format %c $i] %[format %02x $i]
+}
+unset i
+
 proc pct_encode_extended {what} {
-	set enc [list { } +]
-	for {set i 0} {$i < 256} {incr i} {
-		if {$i > 32 && $i < 127} { continue }
-		lappend enc [format %c $i] %[format %02x $i]
-	}
+	variable enc
 	return [string map $enc $what]
 }
 
+# Interpret an URL fragment relative to a complete URL
 proc relative {full partial} {
 	if {[string match -nocase http* $partial]} { return $partial }
 	set base [join [lrange [split $full /] 0 2] /]
@@ -330,25 +375,50 @@ proc relative {full partial} {
 	}
 }
 
-# charsets for encoding conversion in proc fetch
-# reference: http://www.w3.org/International/O-charset-lang.html
-array set _charset {
-	lv	iso8859-13	lt	iso8859-13	et	iso8859-15	eo	iso8859-3	mt	iso8859-3
-	bg	iso8859-5	be	iso8859-5	uk	iso8859-5	mk	iso8859-5	ar	iso8859-6
-	el	iso8859-7	iw	iso8859-8	tr	iso8859-9	sr	iso8859-5
-	ru	koi8-r		ja	euc-jp		ko	euc-kr		cn	euc-cn
-}
-foreach cc {af sq eu ca da nl en fo fi fr gl de is ga it no pt gd es sv} {
-	set _charset($cc) iso8859-1
-}
-foreach cc {hr cs hu pl ro sr sk sl} {
-	set _charset($cc) iso8859-2
+
+proc extract_charset {content_type charset} {
+	if {[regexp -nocase {charset\s*=\s*\"((?:[^""]|\\\")*)\"} $content_type -> cs]} {
+		set charset [string map {{\"} \"} $cs]
+	} else {
+		regexp -nocase {charset\s*=\s*(\S+?);?} $content_type -> charset
+	}
+	set charset [string map {\" {} ' {}} $charset]
+	dccbroadcast "Charset is $charset"
+	return $charset
 }
 
-set _charset(jp) euc-jp; # yay, nonstandard bullshit
-set _charset(en) utf-8; # assume utf-8 if charset not specified and lang="en"
-variable _charset
+# Fix the charset of an HTTP charset according to
+#  * <meta charset> / <meta http-equiv="content-type"> if available
+#  * HTTP header
+# See http://www.edition-w3.de/TR/2000/REC-xml-20001006/#sec-guessing
+proc fix_charset {data charset s_type} {
+	# First, Check the data for a BOM
+	if {[binary scan $data cucucucu b1 b2 b3 b4] < 4} return
 
+	# TODO is UCS-4 supported at all?
+	if {$b1 == 255 && $b2 == 254 || $b1 == 254 && $b2 == 255} {
+		return "unicode"
+	} elseif {$b1 == 239 && $b2 == 187 && $b3 == 191} {
+		return "utf-8"
+	} else {
+
+	# Next, try the content type. HTML content may override this.
+	set charset [extract_charset $s_type $charset]
+
+	# Next, try the header meta tags, which may override the charset sent
+	# via HTTP headers
+	# FIXME: this implementation is ugly. Use gumbo for this and parse twice?
+	set charset [extract_charset $data $charset]
+	}
+
+	return  [encoding convertfrom [http::CharsetToEncoding $charset] $data]
+}
+
+proc any {a b} {
+	return [expr {$a != "" ? $a : $b}]
+}
+
+# Progress handler which aborts the download if it turns out to be too large
 proc progresshandler {tok total current} {
 	variable settings
 	if {$current >= $settings(max-download)} {
@@ -362,12 +432,13 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	# sets settings(url) for redirection tracking
 	# sets settings(content-type) so calling proc knows whether to parse data
 	# returns data if content-type=text/html; returns content-type otherwise
-	variable settings; variable cookies; variable _charset; variable ns
+	variable settings; variable cookies; variable ns
 	
 	if {[string length $post]} { set validate 0 }
 
 	set url [pct_encode_extended $url]
 	set settings(url) $url
+	set settings(error) ""
 
 	if {![string length $headers]} {
 		set headers [list Referer $url]
@@ -377,9 +448,14 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 		}
 	}
 
+	# -binary true  is essential here because the page charset sometimes
+	# does not match the HTTP header charset, sometimes isn't present at
+	# all, then the encoding would be forced to ISO-8859-1 by default and
+	# unicode would be broken afterwards.
 	set command [list ::http::geturl $url             \
 	                  -timeout $settings(timeout)     \
 	                  -validate $validate             \
+	                  -binary true                    \
 	                  -progress ${ns}::progresshandler]
 
 	if {[string length $post]} {
@@ -390,21 +466,23 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 		lappend command -headers $headers
 	}
 
+	set data ""
+
 	if {[catch $command http]} {
-		if {[catch {set data "Error [::http::ncode $http]: [::http::error $http]"}]} {
+		if {[catch {set settings(error) "Error [::http::ncode $http]: [::http::error $http]"}]} {
 			set data "Error: Connection timed out."
 		}
 		::http::cleanup $http
 		return $data
-	} {
+	} else {
 		update_cookies $http
 		set data [::http::data $http]
 	}
 	
-	upvar \#0 $http state
-	array set raw_meta $state(meta)
-	foreach {name val} [array get raw_meta] { set meta([string tolower $name]) $val }
-	unset raw_meta
+	upvar #0 $http state
+	set data [fix_charset $data $state(charset) $state(type)]
+	foreach {name val} $state(meta) { set meta([string tolower $name]) $val }
+
 	# $state(status) == "toobig" in case the file wasn't downloaded completely because it was too big
 
 	::http::cleanup $http
@@ -420,54 +498,23 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 		if {[incr iterations] < 10} {
 			return [fetch $meta(redirect) "" $headers $iterations $validate]
 		} else {
-			return "Error: too many redirections"
+			set settings(error) "Error: too many redirections"
+			return ""
 		}
 	}
 
 	if {[info exists meta(content-length)]} {
-		set settings(content-length) $meta(content-length)
-	} else {
-		set settings(content-length) 0
+		set settings(content-length) [any $meta(content-length) 0]
 	}
-
-	set charset1 ""
 	if {[info exists meta(content-type)]} {
-		set settings(content-type) [lindex [split $meta(content-type) ";"] 0]
-		if {[regexp {\ycharset=([\w\-]+)} $meta(content-type) -> charset]} {
-			set charset1 $charset
-		}
-#	elseif {[info exists meta(x-aspnet-version)]}
-#		set settings(content-type) "text/html"
-	} else {
-		set settings(content-type) "unknown"
+		set settings(content-type) [any [lindex [split $meta(content-type) ";"] 0] "unknown"]
 	}
-
-	#if {[string match -nocase $settings(content-type) "text/html"]\
-	&& $settings(content-length) <= $settings(max-download)} {}
 	if {[string match -nocase $settings(content-type) "text/html"]\
 	    || [string match -nocase $settings(content-type) "application/xhtml+xml"]} {
 		if {$validate} {
+			# It was a HEAD request, redo the request with GET
 			return [fetch $url "" $headers [incr iterations] 0]
 		} else {
-			# if it already exists, the charset specified in html takes precedence (mw)
-			regexp -nocase {\ycharset=\"?\'?([\w\-]+)} $data -> charset
-			if {[info exists charset]} {
-				set charset [string map {iso- iso} [string tolower $charset]]
-				set log "url: '$url', charset is '$charset', charset1 is '$charset1'"
-				if {[lsearch [encoding names] $charset] < 0} {
-					unset charset;
-					set log "$log; and was unset because it doesn't exist"
-				}
-				putlog $log
-			} else { #DEBUG
-				putlog "url: '$url' has no charset"
-			}
-			if {![info exists charset] && [regexp -nocase {\ylang=\"?\'?(\w{2})} $data - lang]} {
-				set charset $_charset([string tolower $lang])
-			}
-			if {[info exists charset] && ![string equal -nocase [encoding system] $charset]} {
-				set data [encoding convertfrom $charset $data]
-			}
 			return $data
 		}
 	} else {
@@ -477,31 +524,32 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 
 catch {source $settings(base-path)/$settings(tinyurl-service)}
 
-proc nop args {}
-
 proc get_title {url} {
 #	returns $ret(url, content-length, tinyurl [where $url length > max], title)
 	variable settings
 
-	#set data [string map [list \r "" \n ""] [fetch $url]]
-	set data [string map {\r "" \n ""} [fetch $url]]
+	set title [htmltitle [fetch $url "" $settings(default-headers)]]
 
 	if {![string equal $url $settings(url)]} {
 		set url $settings(url)
 	}
-	set ret(error) [string match Error* $data]
+	#set ret(error) [string match Error* $data]
+	set ret(error) [expr {[string length $settings(error)] > 0}]
  	set ret(url) $url
 	set content_length $settings(content-length)
-	set title ""
-	#{<title[^>]*>\s*(.*)\s*<\s*/\s*title[^>]*>}
-	if {[regexp -nocase {<\s*?title\s*?>\s*?(.*?)\s*<\s*/title\s*>} $data - title]} {
-		set title [string map {&#x202a; "" &#x202c; "" &rlm; ""} [string trim $title]]; # for YouTube
-		regsub -all {\s+} $title { } title
-		set ret(title) [string map {\r "" \n ""} [::htmlparse::mapEscapes $title]]
+	regsub -all {\s+} [string trim $title] { } ret(title)
+	if {$title == ""} {
+		if {[string length $settings(error)] > 0} {
+			set ret(title) $settings(error)
+		} else {
+			set ret(title) "Content type: $settings(content-type)"
+		}
 	}
 
-	if {[string length $url] >= $settings(max-length)} {
-		set ret(tinyurl) [tinyurl $url]
+	catch {
+		if {[string length $url] >= $settings(max-length)} {
+			set ret(tinyurl) [tinyurl $url]
+		}
 	}
 
 	if {$content_length} {
@@ -521,7 +569,8 @@ proc bytes_to_human {bytes} {
 	} else { return "$bytes B" }
 }
 
-proc make_round {num denom} { # FIXME: what does this even do?
+# FIXME This is broken. Replace by something that makes sense.
+proc make_round {num denom} {
 	global tcl_precision
 	set expr {1.1 + 2.2 eq 3.3}; while {![catch { incr tcl_precision }]} {}; while {![expr $expr]} { incr tcl_precision -1 }
 	return [regsub {00000+[1-9]} [expr {round([expr {100.0 * $num / $denom}]) * 0.01}] ""]
