@@ -72,9 +72,9 @@ set settings(max-cookie-age) 2880     ; # if cookie shelf life > this many minut
 set settings(udef-flag) urlmagic      ; # .chanset #channel +urlmagic
 set settings(tinyurl-service) "http://tinyurl.com/api-create.php" ;# URL of the URL shortening service to use
 set settings(tinyurl-post-field) "url" ;# name of the POST data field to use for the URL shortening service
+set settings(urlmagic-db)	"urlmagic.db" ;# filename and path of the urlmagic DB
 set twitter(username) user            ; # your Twitter username or registered email address
 set twitter(password) ""              ; # your Twitter password
-
 #########################
 # end of user variables #
 #########################
@@ -83,6 +83,23 @@ set scriptver 1.1
 variable cookies
 variable ns [namespace current]
 variable skip_sqlite3 [catch {package require sqlite3}]
+
+proc reopen_db { } {
+        # this procedure must be manually invoked via .tcl urlmagic::reopen_db if the database is moved
+        # while messing with the database, use .set urlmagic::skip_sqlite3 1 to disable writes to the database until you're done.
+	variable skip_sqlite3;
+	variable settings;
+	variable ns;
+
+        if {$skip_sqlite3} return;
+
+        if {[llength [info commands ${ns}::db]]} {
+                db close
+        }
+        sqlite3 urlmagic_db $settings(urlmagic-db)
+	rename urlmagic_db ${ns}::db
+	init_db
+}
 
 setudef flag $settings(udef-flag)
 
@@ -179,36 +196,38 @@ proc find_urls {nick uhost hand chan txt} {
 	}
 }
 
-proc db {query} {
-
-	sqlite3 urlmagic_db urlmagic.db
-
-	urlmagic_db eval "CREATE TABLE IF NOT EXISTS urls (\
-		id INTEGER PRIMARY KEY AUTOINCREMENT,\
-		url TEXT NOT NULL)"
-
-	set res {}
-
-	urlmagic_db eval $query v {
-		set row {}
-		foreach col $v(*) { lappend row $v($col) }
-		lappend res $row
+proc init_db {} {
+	db eval {
+	CREATE TABLE IF NOT EXISTS
+		urls( id                INTEGER PRIMARY KEY AUTOINCREMENT
+		    , url               TEXT UNIQUE NOT NULL -- the URL that was mentioned
+		    , last_mentioned_by TEXT                 -- who mentioned it the last time
+		    , last_mentioned    INTEGER DEFAULT 0    -- unix time when it was last mentioned
+		    , last_mentioned_on TEXT DEFAULT ""      -- channel the URL was last mentioned on
+		    , mention_count     INTEGER DEFAULT 0    -- number of times it was mentioned
+		    );
 	}
-
-	urlmagic_db close
-
-	return $res
 }
 
 proc query_history {url} {
-	variable ns
-	return [lindex [${ns}::db "SELECT COUNT(*) FROM urls WHERE url='[string map {' ''} $url]'"] 0]
+	db eval {SELECT COUNT(*) FROM urls WHERE url=:url} {
+		return ${COUNT(*)}
+	}
 }
 
-proc record_history {url} {
-	variable ns
-	set url [string map {' ''} $url]
-	${ns}::db "INSERT INTO urls (url) SELECT '$url' WHERE NOT EXISTS (SELECT 1 FROM urls WHERE url='$url')"
+proc record_history {url nick chan} {
+	catch {db eval {
+		INSERT INTO urls VALUES(NULL, :url, NULL, NULL, NULL, NULL); -- initialise if it doesn't yet exist; throws an error otherwise, hence the catch (bit ugly, but it works)
+	}}
+
+	db eval {
+		UPDATE urls SET
+			last_mentioned_by = :nick,
+			last_mentioned_on = :chan,
+			last_mentioned    = strftime('%s','now'), 
+			mention_count     = mention_count + 1
+		WHERE url = :url;
+	}
 }
 
 proc update_cookies {tok} {
@@ -306,7 +325,7 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	# sets settings(url) for redirection tracking
 	# sets settings(content-type) so calling proc knows whether to parse data
 	# returns data if content-type=text/html; returns content-type otherwise
-	variable settings; variable cookies; variable _charset
+	variable settings; variable cookies; variable _charset; variable ns
 	
 	if {[string length $post]} { set validate 0 }
 
@@ -557,6 +576,8 @@ proc tweet {what} {
 }
 
 ${ns}::flood_prot true
+
+reopen_db ;# open the db for the first time
 
 putlog "urlmagic.tcl $scriptver loaded."
 
