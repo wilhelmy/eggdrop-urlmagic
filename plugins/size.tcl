@@ -41,11 +41,11 @@ proc make_round {num denom} {
 }
 
 proc init_plugin {} {
-	hook::bind urlmagic <String> urlmagic::plugin::size [namespace current]::size
+	hook::bind urlmagic <String> [myself] [namespace current]::size
 }
 
 proc deinit_plugin {} {
-	hook::forget urlmagic::plugin::size
+	hook::forget [myself]
 }
 
 } ;# end namespace

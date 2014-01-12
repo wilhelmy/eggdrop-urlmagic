@@ -133,7 +133,7 @@ proc init_plugin {} {
 	variable ns
 	# Bind an event to which to react. Post-String will be executed after
 	# the title detection string builders are finished.
-	hook::bind urlmagic <Post-String> urlmagic::plugin::sqlite ${ns}::record_history
+	hook::bind urlmagic <Post-String> [myself] ${ns}::record_history
 
 	# Open the database for the first time
 	reopen_db
@@ -141,7 +141,7 @@ proc init_plugin {} {
 
 proc deinit_plugin {} {
 	# Forget all hooks previously bound by this plugin.
-	hook::forget urlmagic::plugin::sqlite
+	hook::forget [myself]
 	# Close the database
 	db close
 }

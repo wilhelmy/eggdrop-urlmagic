@@ -95,7 +95,8 @@ proc find_urls {nick uhost hand chan txt} {
 		if {!$url_complete} { set url "http://$url" }
 
 		variable title
-		array set title [list nick $nick uhost $uhost hand $hand chan $chan text $txt]
+		array set title [list nick $nick uhost $uhost hand $hand \
+			chan $chan text $txt was-complete $url_complete]
 		# $title(url, content-length, tinyurl [where $url length > max], title, error [boolean])
 		process_title $url
 
