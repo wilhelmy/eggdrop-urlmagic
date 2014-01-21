@@ -5,14 +5,10 @@
 # There are no configurable settings for it.
 # It binds on urlmagic's <String> string builder hook.
 
-namespace eval ::urlmagic::plugins::size {
-
 package require hook
 
 set VERSION 1.1+hg
-namespace path ::urlmagic
-
-variable no_settings 1
+set no_settings 1
 
 proc size {} {
 	upvar #0 ::urlmagic::title t
@@ -44,5 +40,3 @@ proc init_plugin {} {
 proc deinit_plugin {} {
 	hook::forget [myself]
 }
-
-} ;# end namespace

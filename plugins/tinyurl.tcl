@@ -1,11 +1,9 @@
 # This plugin creates a tinyurl at tinyurl.com if the URL is longer than a
 # certain threshold.
 
-namespace eval ::urlmagic::plugins::tinyurl {
 package require http
-namespace path ::urlmagic
+
 set VERSION 1.1+hg
-variable ns [namespace current]
 
 proc tinyurl {url} {
 	variable settings
@@ -48,5 +46,3 @@ proc init_plugin {} {
 proc deinit_plugin {} {
 	hook::forget [myself]
 }
-
-} ;# end namespace

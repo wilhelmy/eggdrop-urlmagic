@@ -391,6 +391,7 @@ namespace eval plugins {
 				warn "Can't load plugin, it is already loaded. Use reload to reload"
 				return 0
 			}
+			init_ns $plugns
 			if {
 				[catch { namespace eval $plugns source "$settings(base-path)/${plugin}.tcl" } err]
 			} then {
@@ -409,6 +410,13 @@ namespace eval plugins {
 		}
 	}
 
+	proc init_ns {ns} {
+		namespace eval $ns {
+			set ns [namespace current]
+			namespace path ::urlmagic
+		}
+	}
+		
 	proc unload {args} {
 		variable loaded_plugins
 		variable ns
@@ -426,7 +434,7 @@ namespace eval plugins {
 			set loaded_plugins [lsearch -inline -not -all $loaded_plugins $plugin]
 			set v [set ${plugns}::VERSION]
 			namespace delete $plugns
-			namespace eval $plugns {} 
+			init_ns $plugns
 			if {$backup != {}} {
 				array set ${plugns}::settings $backup
 			}

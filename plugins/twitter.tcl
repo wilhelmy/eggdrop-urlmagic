@@ -5,11 +5,7 @@
 # works fine.)
 # See twitter.conf for the settings (append them to your urlmagic config)
 
-namespace eval ::urlmagic::plugins::twitter {
-
-namespace path ::urlmagic
 set VERSION 1.1+hg
-variable ns [namespace current]
 
 proc logged_in {} {
 	variable cookies
@@ -117,5 +113,3 @@ proc init_plugin {} {
 proc deinit_plugin {} {
 	hook::forget [myself]
 }
-
-} ;# end namespace

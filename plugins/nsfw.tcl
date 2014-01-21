@@ -13,10 +13,8 @@
 #
 # Note that this probably isn't 100% accurate :)
 
-namespace eval ::urlmagic::plugins::nsfw {
-variable no_settings 1
-namespace path ::urlmagic
 set VERSION 1.1+hg
+set no_settings 1
 
 proc mark_nsfw {} {
 	upvar #0 ::urlmagic::title t
@@ -45,6 +43,4 @@ proc init_plugin {} {
 
 proc deinit_plugin {} {
 	hook::forget [myself]
-}
-
 }

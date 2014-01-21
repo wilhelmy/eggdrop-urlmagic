@@ -35,7 +35,6 @@
 # * This plugin exports the following hooks:
 #   None.
 
-namespace eval ::urlmagic::plugins::sqlite {
 # hook (from tcllib) provides a registry for hooks, effectively implementing a
 # monitor/observer pattern. A plugin can observe urlmagic/another plugin and
 # provide a hook at the same time. A plugin's subject object name should
@@ -48,15 +47,9 @@ package require hook
 # plugins, this is not necessarily the case.
 variable VERSION 1.1+hg
 
-# you are here.
-variable ns [namespace current]
-
-# pull in all urlmagic functions
-namespace path ::urlmagic
-
 variable skip_sqlite3 [catch {package require sqlite3}]
 if {$skip_sqlite3} {
-	warn "Plugin loaded but sqlite3 library not installed, won't do anything."
+	warn "Plugin loaded but sqlite3 library not installed, plugin won't do anything."
 }
 
 proc reopen_db { } {
@@ -145,5 +138,3 @@ proc deinit_plugin {} {
 	# Close the database
 	db close
 }
-
-} ;# end namespace
