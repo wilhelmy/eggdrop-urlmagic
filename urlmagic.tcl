@@ -8,7 +8,9 @@
 namespace eval ::urlmagic {
 
 # Specifies the config file which contains all other settings for urlmagic.
-set settings(config-file) "conf/urlmagic.tcl"
+# Defaults to the file "urlmagic.conf" in the same directory this script is
+# located in.
+set settings(config-file) "[file dirname [info script]]/urlmagic.conf"
 
 }
 
@@ -20,7 +22,6 @@ set settings(config-file) "conf/urlmagic.tcl"
 
 namespace eval ::urlmagic {
 
-
 foreach lib {http tls hook} {
 	if {[catch {package require $lib}]} {
 		putlog "Error loading urlmagic: Library $lib is missing. See README for more information."
@@ -28,6 +29,8 @@ foreach lib {http tls hook} {
 	}
 }
 
+# Returns a plugin's namespace name with any surrounding ":" characters stripped
+# Used as the event identifier for the hook module
 proc myself {} {
 	string trim [uplevel 1 namespace current] :
 }
@@ -36,8 +39,8 @@ proc warn {text} {
 	putlog "\002(Warning)\002 [myself]: $text"
 }
 
-if {! [file exists $urlmagic::settings(config-file)]} {
-	warn "Configuration file $urlmagic::settings(config-file) does not exist. Bailing out."
+if {! [file exists $settings(config-file)]} {
+	warn "Configuration file $settings(config-file) does not exist. Bailing out."
 	warn "Make sure to read the README"
 	return 1
 }
@@ -374,7 +377,7 @@ proc process_title {url} {
 }
 
 namespace eval plugins {
-	set settings(base-path) "$urlmagic::settings(base-path)/plugins"
+	set settings(plugin-base-path) "$urlmagic::settings(base-path)/plugins"
 	set ns [namespace current]
 	namespace path ::urlmagic
 
@@ -393,8 +396,8 @@ namespace eval plugins {
 			}
 			init_ns $plugns
 			if {
-				[catch { namespace eval $plugns source "$settings(base-path)/${plugin}.tcl" } err] &&
-				[catch { namespace eval $plugns source "$settings(base-path)/${plugin}/${plugin}.tcl" } err]
+				[catch { namespace eval $plugns source "$settings(plugin-base-path)/${plugin}.tcl" } err] &&
+				[catch { namespace eval $plugns source "$settings(plugin-base-path)/${plugin}/${plugin}.tcl" } err]
 			} then {
 				warn "Unable to load plugin $plugin: $err"
 				return 0
