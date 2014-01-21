@@ -426,10 +426,9 @@ namespace eval plugins {
 			set loaded_plugins [lsearch -inline -not -all $loaded_plugins $plugin]
 			set v [set ${plugns}::VERSION]
 			namespace delete $plugns
+			namespace eval $plugns {} 
 			if {$backup != {}} {
-				namespace eval $plugns {
-					array set settings $backup
-				}
+				array set ${plugns}::settings $backup
 			}
 			putlog "urlmagic: unloaded plugin ${plugin} $v"
 			return 1
