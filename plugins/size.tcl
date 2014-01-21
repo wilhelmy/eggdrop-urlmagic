@@ -33,11 +33,8 @@ proc bytes_to_human {bytes} {
 	} else { return "$bytes B" }
 }
 
-# FIXME This is broken. Replace by something that makes sense.
 proc make_round {num denom} {
-	global tcl_precision
-	set expr {1.1 + 2.2 eq 3.3}; while {![catch { incr tcl_precision }]} {}; while {![expr $expr]} { incr tcl_precision -1 }
-	return [regsub {00000+[1-9]} [expr {round([expr {100.0 * $num / $denom}]) * 0.01}] ""]
+	return [format "%.2f" [expr {$num / $denom}]]
 }
 
 proc init_plugin {} {
