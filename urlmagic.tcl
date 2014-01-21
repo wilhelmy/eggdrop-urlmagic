@@ -393,7 +393,8 @@ namespace eval plugins {
 			}
 			init_ns $plugns
 			if {
-				[catch { namespace eval $plugns source "$settings(base-path)/${plugin}.tcl" } err]
+				[catch { namespace eval $plugns source "$settings(base-path)/${plugin}.tcl" } err] &&
+				[catch { namespace eval $plugns source "$settings(base-path)/${plugin}/${plugin}.tcl" } err]
 			} then {
 				warn "Unable to load plugin $plugin: $err"
 				return 0
