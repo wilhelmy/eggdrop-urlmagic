@@ -84,7 +84,7 @@ proc ignore {uhost chan} {
 
 proc find_urls {nick uhost hand chan txt} {
 
-	variable settings; variable twitter; variable skip_sqlite3; variable ns
+	variable settings; variable twitter; variable ns
 
 	if {[matchattr $hand $settings(ignore-flags)] || ![channel get $chan $settings(udef-flag)]} { return }
 
