@@ -7,10 +7,13 @@
 # User variables, allow changing the config file that will be loaded by urlmagic
 namespace eval ::urlmagic {
 
+# Don't change this. It points to the directory where urlmagic is located.
+set settings(base-path) [file dirname [info script]]
+
 # Specifies the config file which contains all other settings for urlmagic.
 # Defaults to the file "urlmagic.conf" in the same directory this script is
 # located in.
-set settings(config-file) "[file dirname [info script]]/urlmagic.conf"
+set settings(config-file) "$settings(base-path)/urlmagic.conf"
 
 }
 
@@ -49,7 +52,6 @@ variable VERSION 1.1+hg
 variable cookies
 variable ns [namespace current]
 variable ignores ;# temporary ignores
-set settings(base-path) [file dirname [info script]]
 
 variable title ;# contains process_title's things, also used for string building by hooks
 
