@@ -397,9 +397,15 @@ namespace eval plugins {
 				return 0
 			}
 			init_ns $plugns
+
+			# Two possible locations, check both for existence, source if available.
+			set tcl1 "$settings(plugin-base-path)/${plugin}.tcl"
+			set tcl2 "$settings(plugin-base-path)/${plugin}/${plugin}.tcl"
 			if {
-				[catch { namespace eval $plugns source "$settings(plugin-base-path)/${plugin}.tcl" } err] &&
-				[catch { namespace eval $plugns source "$settings(plugin-base-path)/${plugin}/${plugin}.tcl" } err]
+			   ( [file exists $tcl1] &&
+			     [catch { namespace eval $plugns source $tcl1 } err] ) 
+			|| ( [file exists $tcl2] &&
+			     [catch { namespace eval $plugns source $tcl2 } err] )
 			} then {
 				warn "Unable to load plugin $plugin: $err"
 				return 0
