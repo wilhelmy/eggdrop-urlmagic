@@ -1,8 +1,8 @@
 #! tclsh
 ################################################################################
 #         Start of user variables, copy things below this line into            #
-#                   EGGDROP_BASEDIR/conf/urlmagic.tcl                          #
-#   e.g. by executing cat urlmagic.conf.example > ~/eggdrop/conf/urlmagic.tcl  #
+#                   URLMAGIC_BASEDIR/urlmagic.conf                             #
+#   e.g. by executing cat urlmagic.conf.example > urlmagic.conf                #
 ################################################################################
 
 namespace eval ::urlmagic {
