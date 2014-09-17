@@ -380,92 +380,95 @@ proc process_title {url} {
 
 namespace eval plugins {
 	set settings(plugin-base-path) "$urlmagic::settings(base-path)/plugins"
-	set ns [namespace current]
 	namespace path ::urlmagic
 
 	if {![info exists loaded_plugins]} {
 		variable loaded_plugins {}
 	}
 
-	proc load {args} {
+	proc load {plugin} {
 		variable settings
 		variable loaded_plugins
-		foreach plugin $args {
-			set plugns ::urlmagic::plugins::${plugin}
-			if {$plugin in $loaded_plugins} {
-				warn "Can't load plugin, it is already loaded. Use reload to reload"
-				return 0
-			}
-			init_ns $plugns
 
-			# Two possible locations, check both for existence, source if available.
-			set tcl1 "$settings(plugin-base-path)/${plugin}.tcl"
-			set tcl2 "$settings(plugin-base-path)/${plugin}/${plugin}.tcl"
-			if {
-			   ( [file exists $tcl1] &&
-			     [catch { namespace eval $plugns source $tcl1 } err] ) 
-			|| ( [file exists $tcl2] &&
-			     [catch { namespace eval $plugns source $tcl2 } err] )
-			} then {
-				warn "Unable to load plugin $plugin: $err"
-				return 0
-			}
-			if {![info exists ${plugns}::settings] &&
-			    ![info exists ${plugns}::no_settings]} then {
-				warn "$plugin plugin has settings. Please add them to your configuration file first."
-				return 0
-			}
-			${plugns}::init_plugin
-			lappend loaded_plugins $plugin
-			putlog "urlmagic: loaded plugin ${plugin} [set ${plugns}::VERSION]"
-			return 1
+		set plugns ::urlmagic::plugins::${plugin}
+		if {$plugin in $loaded_plugins} {
+			warn "Can't load plugin, it is already loaded. Use reload to reload"
+			return 0
 		}
+		init_ns $plugns
+
+		# Two possible locations, check both for existence, source if available.
+		set tcl1 "$settings(plugin-base-path)/${plugin}.tcl"
+		set tcl2 "$settings(plugin-base-path)/${plugin}/${plugin}.tcl"
+		if {
+		   ( [file exists $tcl1] &&
+		     [catch { namespace eval $plugns source $tcl1 } err] ) 
+		|| ( [file exists $tcl2] &&
+		     [catch { namespace eval $plugns source $tcl2 } err] )
+		} then {
+			warn "Unable to load plugin $plugin: $err"
+			return 0
+		}
+		if {![info exists ${plugns}::settings] &&
+		    ![info exists ${plugns}::no_settings]} then {
+			warn "$plugin plugin has settings. Please add them to your configuration file first."
+			return 0
+		}
+		${plugns}::init_plugin
+		lappend loaded_plugins $plugin
+		putlog "urlmagic: loaded plugin ${plugin} [set ${plugns}::VERSION]"
+		return 1
 	}
 
 	proc init_ns {ns} {
 		namespace eval $ns {
-			set ns [namespace current]
+			variable ns [namespace current]
 			namespace path ::urlmagic
 		}
 	}
 		
-	proc unload {args} {
+	proc unload {plugin} {
 		variable loaded_plugins
-		variable ns
-		foreach plugin $args {
-			set plugns ::urlmagic::plugins::${plugin}
-			if {$plugns ni [namespace children]} {
-				warn "Can't unload plugin $plugin, it does not appear to be loaded"
-				return 0
-			}
-			set backup {}
-			if {[info exists ${plugns}::settings]} {
-				set backup [array get ${plugns}::settings]
-			}
-			${plugns}::deinit_plugin
-			set loaded_plugins [lsearch -inline -not -all $loaded_plugins $plugin]
-			set v [set ${plugns}::VERSION]
-			namespace delete $plugns
-			init_ns $plugns
-			if {$backup != {}} {
-				array set ${plugns}::settings $backup
-			}
-			putlog "urlmagic: unloaded plugin ${plugin} $v"
-			return 1
+
+		set plugns ::urlmagic::plugins::${plugin}
+		if {$plugns ni [namespace children]} {
+			warn "Can't unload plugin $plugin, it does not appear to be loaded"
+			return 0
 		}
+		set backup {}
+		if {[info exists ${plugns}::settings]} {
+			set backup [array get ${plugns}::settings]
+		}
+		${plugns}::deinit_plugin
+		set loaded_plugins [lsearch -inline -not -all $loaded_plugins $plugin]
+		set v [set ${plugns}::VERSION]
+		namespace delete $plugns
+		init_ns $plugns
+		if {$backup != {}} {
+			array set ${plugns}::settings $backup
+		}
+		putlog "urlmagic: unloaded plugin ${plugin} $v"
+		return 1
 	}
 	proc unload_all {} {
 		variable loaded_plugins
-		foreach plugin $loaded_plugins {
-			unload $plugin
-		}
+		foreach plugin $loaded_plugins { unload $plugin }
 	}
 
 	proc reload {args} {
-		foreach plugin $args {
-			unload $plugin
+		foreach plugin $args { unload $plugin }
+		foreach plugin $args {   load $plugin }
+	}
+
+	proc load_enabled {} {
+		foreach plugin $urlmagic::settings(plugins) {
 			load $plugin
 		}
+	}
+
+	proc reload_all {} {
+		unload_all
+		load_all
 	}
 
 } ;# end namespace "plugins"
@@ -475,6 +478,7 @@ source $settings(config-file) ;# read it before initializing everything
   
 if {$settings(htmltitle) != "dumb"} {
 	load $settings(base-path)/htmltitle_$settings(htmltitle)/htmltitle.so
+	putlog "urlmagic: loaded $settings(htmltitle) htmltitle module"
 } else {
 	# "dumb" htmltitle implementation
 	proc htmltitle {data} {
@@ -498,6 +502,6 @@ bind pubm - * ${ns}::find_urls
 
 putlog "urlmagic.tcl $VERSION loaded."
 
-plugins::load {*}$settings(plugins)
+plugins::load_enabled
 
 }; # end namespace
