@@ -7,6 +7,8 @@
 
 set VERSION 1.1+hg
 
+package require tdom
+
 proc logged_in {} {
 	variable cookies
 	if {![info exists cookies(mobile.twitter.com)]} { return 0 }
