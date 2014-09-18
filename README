@@ -1,6 +1,10 @@
-urlmagic by rojo and ente
+urlmagic
+========
 
-Description:
+Written by rojo and ente
+
+Description
+-----------
 
 Does following magic things with URLs:
 
@@ -9,9 +13,10 @@ Does following magic things with URLs:
   * Otherwise, display content-type
   * If url length > threshold, fetch and display tinyurl
 
-Optional features:
+Optional features
+-----------------
 
-Plugins exist for:
+Plugins exist for
 
   * Optionally recording all URLs to your Twitter page or an SQLite database
   * Flagging links as NSFW if it was mentioned in the text next to the link
@@ -25,46 +30,55 @@ It is advised to also install either gumbo or arabica to use the more fail-safe
 title parser. Your eggdrop needs to be compiled against Tcl 8.5 or higher. Tcl 8.4
 and below are at least untested, but probably won't work at all.
 
+Dependencies
+------------
+
 Use your distribution's package management system to install the dependencies
 as appropriate.
 
-Examples:
+### Examples:
 
-Debian / Ubuntu:
-    apt-get install mercurial       (optional; makes updating easier)
-    apt-get install tcllib tcl-tls  (no matter what plugins are enabled; "core")
-    apt-get install libsqlite3-tcl  (if sqlite plugin is enabled)
-    apt-get install tdom            (if twitter plugin is enabled)
+#### Debian / Ubuntu:
 
-Red Hat / CentOS:
-    yum install mercurial           (optional)
-    yum install tcllib tcltls       (core)
-    yum install sqlite-tcl          (sqlite plugin)
-    yum install tdom                (twitter plugin)
+  * apt-get install mercurial       (optional; makes updating easier)
+  * apt-get install tcllib tcl-tls  (no matter what plugins are enabled; "core")
+  * apt-get install libsqlite3-tcl  (if sqlite plugin is enabled)
+  * apt-get install tdom            (if twitter plugin is enabled)
 
-OpenSuSE:
-    zypper install mercurial        (optional)
-    zypper install tcllib tls       (core)
-    zypper install tdom             (twitter plugin)
-    (sqlite plugin does not require extra packages to be installed)
+#### Red Hat / CentOS:
 
-Gentoo:
-    emerge -v mercurial             (optional)
-    emerge -v tcllib dev-tcltk/tls  (core)
-    emerge -v sqlite                (sqlite plugin)
-    emerge -v tdom                  (twitter plugin)
+  * yum install mercurial           (optional)
+  * yum install tcllib tcltls       (core)
+  * yum install sqlite-tcl          (sqlite plugin)
+  * yum install tdom                (twitter plugin)
 
-FreeBSD (port names):
-    devel/mercurial                 (optional)
-    devel/tcllib devel/tcltls       (core)
-    databases/tcl-sqlite3           (sqlite)
-    www/tdom                        (twitter)
+#### OpenSuSE:
 
-NetBSD (pkgsrc package names):
-    devel/mercurial                 (optional)
-    devel/tcllib security/tcl-tls   (core)
-    databases/sqlite3               (sqlite)
-    textproc/tcl-tDOM               (twitter)
+  * zypper install mercurial        (optional)
+  * zypper install tcllib tls       (core)
+  * zypper install tdom             (twitter plugin)
+  * (sqlite plugin does not require extra packages to be installed)
+
+#### Gentoo:
+
+  * emerge -v mercurial             (optional)
+  * emerge -v tcllib dev-tcltk/tls  (core)
+  * emerge -v sqlite                (sqlite plugin)
+  * emerge -v tdom                  (twitter plugin)
+
+#### FreeBSD (port names):
+
+  * devel/mercurial                 (optional)
+  * devel/tcllib devel/tcltls       (core)
+  * databases/tcl-sqlite3           (sqlite)
+  * www/tdom                        (twitter)
+
+#### NetBSD (pkgsrc package names):
+
+  * devel/mercurial                 (optional)
+  * devel/tcllib security/tcl-tls   (core)
+  * databases/sqlite3               (sqlite)
+  * textproc/tcl-tDOM               (twitter)
 
 Please report bugs, gripes, missing operating systems in the table above, etc
 to ente on IRCnet, and feel free to let me know if you use it, or just contact
