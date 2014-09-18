@@ -74,13 +74,18 @@ proc reopen_db { } {
 		db close
 	}
 
-	sqlite3 ${ns}::db $settings(urlmagic-db)
+	if {[catch {sqlite3 ${ns}::db $settings(urlmagic-db)} err]} {
+		warn "Error opening database file: $settings(urlmagic-db). Does the directory exist?"
+		warn "Disabling sqlite. Use .tcl urlmagic::plugins::reload sqlite if you fixed the issue."
+		set skip_sqlite3 1
+		return false
+	}
 	init_db
 }
 
 proc init_db {} {
 	variable skip_sqlite3
-	if {$skip_sqlite3} return
+	if {$skip_sqlite3} {return false}
 
 	db eval {
 	CREATE TABLE IF NOT EXISTS
@@ -135,6 +140,7 @@ proc init_plugin {} {
 proc deinit_plugin {} {
 	# Forget all hooks previously bound by this plugin.
 	hook::forget [myself]
-	# Close the database
-	db close
+	# Close the database. Can fail if opening the database failed, or
+	# something else happened that shouldn't have happened
+	catch {db close}
 }
