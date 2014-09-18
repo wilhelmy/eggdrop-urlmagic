@@ -51,6 +51,18 @@ set settings(seconds-between-channel) 1
 # See http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1
 set settings(default-headers)        {Accept-Language "en, *;q=0.9"}
 
+# What format should be used for the nickname part of the url info that's sent
+# to the channel? %s is replaced by the nickname. To insert a literal %, you
+# need to use %%.
+set settings(nick-format) "<%s>"
+
+# What format should be used for the URL title? %s is replaced by the link
+# title or the content type in case a title isn't available (for instance,
+# because the link does not point to a website but an image).
+# As always with IRC messages, \002 is bold. First \002 turns bold text on, the
+# second one turns it off again.
+set settings(title-format) "\002%s\002"
+
 # Uncomment either of the following lines, gumbo is recommended but will
 # require you to install the Google gumbo library and to compile a Tcl module
 # in the subdirectory "htmltitle_gumbo". arabica is another such module using
@@ -74,5 +86,6 @@ set settings(plugins) {}
 # Example (contains all plugins which currently exist, pick any that you like):
 #
 #set settings(plugins) {nsfw size sqlite tinyurl twitter}
+
 
 }

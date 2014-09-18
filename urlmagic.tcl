@@ -115,8 +115,12 @@ proc find_urls {nick uhost hand chan txt} {
 		# $title(url, content-length, tinyurl [where $url length > max], title, error [boolean])
 		process_title $url
 
+		set title_or_content_type [any $title(title) "Content type: $title(content-type)"]
+
 		# list used for string building
-		set title(output) [list "<$nick>" "\002[any $title(title) "Content type: $title(content-type)"]\002"]
+		set title(output) [list \
+			[format $settings(nick-format) $nick] \
+			[format $settings(title-format) $title_or_content_type]]
 
 		# Pre-String hook: Called before the string builders are invoked.
 		hook::call urlmagic <Pre-String> 
@@ -127,6 +131,8 @@ proc find_urls {nick uhost hand chan txt} {
 		set chan [chandname2name $chan] ;# support for IRCnet !channels
 
 		puthelp "PRIVMSG $chan :[join $title(output)]"
+
+		# Post-String hook: Called after everything is done
 		hook::call urlmagic <Post-String>
 	}
 }
