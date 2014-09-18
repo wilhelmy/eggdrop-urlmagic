@@ -26,7 +26,8 @@ set settings(max-download) 1048576
 set settings(max-cookie-age) 2880
 
 # .chanset #channel +urlmagic -- change this if you want to use a different
-# flag to enable urlmagic on a channel.
+# flag to enable urlmagic on a channel. Setting this is deprecated because I
+# see no good reason to being able to change it. Do not change.
 set settings(udef-flag) urlmagic
 
 # HTTP User-Agent which will be sent with each request
@@ -62,6 +63,13 @@ set settings(nick-format) "<%s>"
 # As always with IRC messages, \002 is bold. First \002 turns bold text on, the
 # second one turns it off again.
 set settings(title-format) "\002%s\002"
+
+# Set this if you don't want the titles to be printed to the channel for some
+# reason, for instance because you only want to tweet them or log them to
+# sqlite. There's also an udef flag (.chanset #channel +urlmagic-silent) you
+# can set if you want to silence the title announcements only on a particular
+# channel.
+set settings(global-silent) no
 
 # Uncomment either of the following lines, gumbo is recommended but will
 # require you to install the Google gumbo library and to compile a Tcl module

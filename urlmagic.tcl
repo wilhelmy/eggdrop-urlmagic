@@ -130,7 +130,9 @@ proc find_urls {nick uhost hand chan txt} {
 
 		set chan [chandname2name $chan] ;# support for IRCnet !channels
 
-		puthelp "PRIVMSG $chan :[join $title(output)]"
+		if {!$settings(global-silent) && ![channel get $chan urlmagic-silent]} {
+			puthelp "PRIVMSG $chan :[join $title(output)]"
+		}
 
 		# Post-String hook: Called after everything is done
 		hook::call urlmagic <Post-String>
@@ -508,6 +510,7 @@ if {$settings(htmltitle) != "dumb"} {
 
 # Initialise eggdrop stuff
 setudef flag $settings(udef-flag)
+setudef flag urlmagic-silent
 bind part - * ${ns}::unignore
 bind sign - * ${ns}::unignore
 # TODO: cron-bind that automatically deletes stale ignores
