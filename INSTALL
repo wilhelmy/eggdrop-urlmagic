@@ -1,5 +1,36 @@
+Start with cloning the hg repo. This will make updates a lot easier, in case
+you find a bug (very likely).
+
+   $ cd ~/eggdrop/scripts # assuming you installed eggdrop to ~/eggdrop
+   $ hg clone https://bitbucket.org/wilhelmy/eggdrop-urlmagic/
+   [hg output omitted]
+
+Alternatively, you can get a zip or tar.gz archive of the newest version here:
+(You only need one of these files since they all contain the same things.)
+
+   * https://bitbucket.org/wilhelmy/eggdrop-urlmagic/get/default.zip
+   * https://bitbucket.org/wilhelmy/eggdrop-urlmagic/get/default.tar.gz
+   * https://bitbucket.org/wilhelmy/eggdrop-urlmagic/get/default.tar.bz2
+
+Unpack it, and place it in the subdirectory "scripts" inside the directory
+whereever you installed eggdrop.
+
+Next you need to configure it.
+
+   $ cd eggdrop-urlmagic
+   $ cp urlmagic.conf.example urlmagic.conf # create a config file from the example
+   $ $EDITOR urlmagic.conf  # edit it with your favourite editor
+
+You can also enable or disable plugins here, as well as change various ways in
+which urlmagic behaves.
+
 You will probably want to install the gumbo or arabica HTML/Tagsoup parsers.
-These parsers will provide better results with broken HTML.
+These parsers will provide better results with broken HTML (my suggestion is to
+use gumbo for best results and to avoid garbled unicode or HTML entities).
+
+There is currently no debian package for either of them, so you may have to
+compile them from source. I didn't find any other html5-capable HTML parsers
+which are currently packaged by debian, if you know of one, please let me know!
 
 If you can't compile anything at all, please use the "dumb" setting for
 htmltitle. This will work in most, but not all cases.
@@ -12,18 +43,20 @@ to do the following:
   Now edit the Makefile, fix the include path for whereever the Tcl header
   files are installed and possibly also the library path for gumbo/arabica.
   gumbo uses pkg-config so chances are you won't need to edit anything.
+
   $ nano Makefile
   $ make
 
-It will look like this for arabica:
-  g++ -I/usr/local/include/arabica -I/usr/include/tcl8.5   -c -o htmltitle.o htmltitle.C
-  g++ -shared -L/usr/local/lib -Wl,-rpath,/usr/local/lib -larabica  htmltitle.o -o htmltitle.so
+It should look similar to this for arabica:
+
+  g++ -fPIC -I/usr/local/include/arabica -I/usr/include/tcl8.5   -c -o htmltitle.o htmltitle.C
+  g++ -shared htmltitle.o -o htmltitle.so -L/usr/local/lib -Wl,-rpath,/usr/local/lib -larabica 
+
 
 And like this for gumbo:
 
-  $ make
-  cc -std=c99 -I/usr/local/include   -I/usr/include/tcl8.5   -c -o htmltitle.o htmltitle.c
-  cc -shared -L/usr/local/lib -lgumbo    htmltitle.o -o htmltitle.so
+  cc -std=c99 -fPIC -I/usr/local/include   -I/usr/include/tcl8.5   -c -o htmltitle.o htmltitle.c
+  cc -shared -o htmltitle.so htmltitle.o -L/usr/local/lib -lgumbo   
 
 That's it, unless there's a compile error, which will print this as its last
 line:

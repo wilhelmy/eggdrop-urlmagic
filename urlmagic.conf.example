@@ -57,13 +57,22 @@ set settings(default-headers)        {Accept-Language "en, *;q=0.9"}
 # the arabica HTML/tagsoup parser. Finally, "dumb" is an implementation written
 # in Tcl, which uses a simple regex. This doesn't always work, but should be
 # okay most of the time. Use this if you can't compile code for some reason.
+# Currently, best results are achieved by using the gumbo library, which is the
+# default for that reason.
 set settings(htmltitle) "gumbo"
 #set settings(htmltitle) "arabica"
 #set settings(htmltitle) "dumb"
 
 # Here you can specify which plugins to load. See the plugins directory for a
 # list of plugins. They each have a description and maybe settings which you
-# should also copy to the config file.
-set settings(plugins) {sqlite}
+# should also copy-paste to this config file. The list items are separated by
+# space.
+#
+# Default: no plugins are enabled.
+set settings(plugins) {}
+
+# Example (contains all plugins which currently exist, pick any that you like):
+#
+#set settings(plugins) {nsfw size sqlite tinyurl twitter}
 
 }

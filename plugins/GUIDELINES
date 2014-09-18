@@ -30,4 +30,6 @@ Programming guidelines for plugins:
   * Take a look at sqlite for a relatively well documented example plugin.
 
   * If your plugin has more files than just a script and optionally a settings
-    file, put all files of your script into its own directory.
+    file, put all files of your script into its own directory. urlmagic will
+    try to load plugins/<name>.tcl first, and if that fails,
+    plugins/<name>/<name>.tcl will be tried next.

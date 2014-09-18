@@ -30,31 +30,37 @@ as appropriate.
 Examples:
 
 Debian / Ubuntu:
+    apt-get install mercurial       (optional; makes updating easier)
     apt-get install tcllib tcl-tls  (no matter what plugins are enabled; "core")
     apt-get install libsqlite3-tcl  (if sqlite plugin is enabled)
     apt-get install tdom            (if twitter plugin is enabled)
 
 Red Hat / CentOS:
+    yum install mercurial           (optional)
     yum install tcllib tcltls       (core)
     yum install sqlite-tcl          (sqlite plugin)
     yum install tdom                (twitter plugin)
 
 OpenSuSE:
+    zypper install mercurial        (optional)
     zypper install tcllib tls       (core)
     zypper install tdom             (twitter plugin)
     (sqlite plugin does not require extra packages to be installed)
 
 Gentoo:
+    emerge -v mercurial             (optional)
     emerge -v tcllib dev-tcltk/tls  (core)
     emerge -v sqlite                (sqlite plugin)
     emerge -v tdom                  (twitter plugin)
 
 FreeBSD (port names):
+    devel/mercurial                 (optional)
     devel/tcllib devel/tcltls       (core)
     databases/tcl-sqlite3           (sqlite)
     www/tdom                        (twitter)
 
 NetBSD (pkgsrc package names):
+    devel/mercurial                 (optional)
     devel/tcllib security/tcl-tls   (core)
     databases/sqlite3               (sqlite)
     textproc/tcl-tDOM               (twitter)
