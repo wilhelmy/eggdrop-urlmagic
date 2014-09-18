@@ -368,7 +368,9 @@ proc process_title {url} {
 	variable settings
 	variable title
 
-	# nuke our part of the array
+	# nuke array
+	foreach v [array names title] { unset title($v) }
+
 	set title(data)		  [fetch $url "" $settings(default-headers)]
 	set title(url)		  $url
 	set title(expanded-url)	  $settings(url)
