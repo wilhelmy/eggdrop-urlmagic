@@ -3,6 +3,7 @@ urlmagic by rojo and ente
 Description:
 
 Does following magic things with URLs:
+
   * Follows links posted in a channel if the udef flag +urlmagic is set
   * If content-type ~ text/html and <title>content exists</title> display title
   * Otherwise, display content-type
