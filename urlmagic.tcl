@@ -107,6 +107,9 @@ proc find_urls {nick uhost hand chan txt} {
 		if {!$url_complete} { set url "http://$url" }
 
 		variable title
+		# nuke array
+		foreach v [array names title] { unset title($v) }
+
 		array set title [list nick $nick uhost $uhost hand $hand \
 			chan $chan text $txt was-complete $url_complete]
 		# $title(url, content-length, tinyurl [where $url length > max], title, error [boolean])
@@ -367,9 +370,6 @@ proc process_title {url} {
 #	returns $ret(url, content-length, tinyurl [where $url length > max], title)
 	variable settings
 	variable title
-
-	# nuke array
-	foreach v [array names title] { unset title($v) }
 
 	set title(data)		  [fetch $url "" $settings(default-headers)]
 	set title(url)		  $url
