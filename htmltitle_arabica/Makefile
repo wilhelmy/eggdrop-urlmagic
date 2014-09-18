@@ -7,12 +7,12 @@ TCL_INC=	-I$(TCL_PREFIX)/include/tcl8.5
 TCL_LIB=	
 # You can probably stop here.
 
-CXXFLAGS=	$(ARABICA_INC) $(TCL_INC)
+CXXFLAGS=	-fPIC $(ARABICA_INC) $(TCL_INC)
 LDFLAGS=	-shared
 LIBS=		$(ARABICA_LIB) $(TCL_LIB)
 
 htmltitle.so: htmltitle.o
-	$(CXX) $(LDFLAGS) $(LIBS) $< -o $@
+	$(CXX) $(LDFLAGS) $< -o $@ $(LIBS)
 
 clean:
 	rm -f htmltitle.o htmltitle.so
