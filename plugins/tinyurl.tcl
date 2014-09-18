@@ -12,7 +12,8 @@ proc tinyurl {url} {
 	catch {
 		set tok [::http::geturl $settings(tinyurl-service) -query $query -timeout $settings(timeout)]
 		upvar #0 $tok state
-		if {$state(status) == "ok" && $state(code) == 200 && [string match -nocase "text/plain*" $state(type)]} {
+		if {[string match -nocase "* 200 OK" $state(http)]
+		&&  [string match -nocase "text/plain*" $state(type)]} {
 			set result [lindex [split $state(body) \n] 0]
 		}
 		::http::cleanup $tok
