@@ -6,12 +6,12 @@ TCL_INC=	-I$(TCL_PREFIX)/include/tcl8.5
 TCL_LIB=	
 # You can probably stop here.
 
-CFLAGS=		-std=c99 $(GUMBO_INC) $(TCL_INC)
+CFLAGS=		-std=c99 -fPIC $(GUMBO_INC) $(TCL_INC)
 LDFLAGS=	-shared
 LIBS=		$(GUMBO_LIB) $(TCL_LIB)
 
 htmltitle.so: htmltitle.o
-	$(CC) $(LDFLAGS) $(LIBS) $< -o $@
+	$(CC) $(LDFLAGS) -o $@ $< $(LIBS)
 
 clean:
 	rm -f htmltitle.o htmltitle.so
