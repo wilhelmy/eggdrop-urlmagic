@@ -121,6 +121,8 @@ proc find_urls {nick uhost hand chan txt} {
 		# String hook: Called for all string builders
 		hook::call urlmagic <String>
 
+		set chan [chandname2name $chan] ;# support for IRCnet !channels
+
 		puthelp "PRIVMSG $chan :[join $title(output)]"
 		hook::call urlmagic <Post-String>
 	}
