@@ -30,18 +30,36 @@ as appropriate.
 Examples:
 
 Debian / Ubuntu:
-    apt-get install tcllib tcl-tls
+    apt-get install tcllib tcl-tls  (no matter what plugins are enabled; "core")
+    apt-get install libsqlite3-tcl  (if sqlite plugin is enabled)
+    apt-get install tdom            (if twitter plugin is enabled)
 
 Red Hat / CentOS:
-    yum install tcllib tcltls
+    yum install tcllib tcltls       (core)
+    yum install sqlite-tcl          (sqlite plugin)
+    yum install tdom                (twitter plugin)
+
+OpenSuSE:
+    zypper install tcllib tls       (core)
+    zypper install tdom             (twitter plugin)
+    (sqlite plugin does not require extra packages to be installed)
 
 Gentoo:
-    emerge -v tcllib dev-tcltk/tls
+    emerge -v tcllib dev-tcltk/tls  (core)
+    emerge -v sqlite                (sqlite plugin)
+    emerge -v tdom                  (twitter plugin)
 
-FreeBSD:
-    pkg_add -r tcllib tcltls
+FreeBSD (port names):
+    devel/tcllib devel/tcltls       (core)
+    databases/tcl-sqlite3           (sqlite)
+    www/tdom                        (twitter)
 
+NetBSD (pkgsrc package names):
+    devel/tcllib security/tcl-tls   (core)
+    databases/sqlite3               (sqlite)
+    textproc/tcl-tDOM               (twitter)
 
-Please report bugs to ente on IRCnet, and feel free to let me know if you use
-it, but didn't find a bug!
+Please report bugs, gripes, missing operating systems in the table above, etc
+to ente on IRCnet, and feel free to let me know if you use it, or just contact
+me for chit-chat.
 
