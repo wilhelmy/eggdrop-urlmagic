@@ -81,7 +81,7 @@ static const char* find_title(const GumboNode* root) {
 
 int Tcl_htmltitle(ClientData dummy, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
-	char const error[] = "Wrong # args: usage is \"htmtitle str\"";
+	char const error[] = "Wrong # args: usage is \"htmltitle str\"";
 
 	if (argc != 2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(error, -1));
