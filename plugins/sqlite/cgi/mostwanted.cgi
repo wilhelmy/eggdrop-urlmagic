@@ -37,19 +37,19 @@
 # HTTP server probably runs CGI scripts under a different user ID.
 set dbfile /home/yourusername/eggdrop/urlmagic.db
 
-proc setCookie {} {
+proc setCookie {} { 
 	# You need to fill in your domain and (optionally) a path restriction to which
 	# the cookie is sent. Uncomment *only one* of the examples or you might end up
 	# sending multiple cookies to the browser.
 
 	# Example 1: Just the domain name (and any subdomain, indicated by the
 	# dot before the domain name)
-	##ncgi::setCookie -name pnick -value $nick -domain .example.com ; return
+	##ncgi::setCookie -name pnick -value $::nick -domain .example.com ; return
 	
 	# Example 2: All URLs matching the exact domain example.com under the path of
 	# /~eggdrop/ are being sent the cookie. This variant is more secure. Use
 	# it if you know the exact path the resource will be available on.
-	##ncgi::setCookie -name pnick -value $nick -domain example.com -path /~eggdrop/ ; return
+	##ncgi::setCookie -name pnick -value $::nick -domain example.com -path /~eggdrop/ ; return
 }
 
 # The name of your eggdrop bot. Additionally, you need to add it to index.html
