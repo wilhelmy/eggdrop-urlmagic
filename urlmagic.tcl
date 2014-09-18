@@ -22,6 +22,12 @@ set settings(config-file) "$settings(base-path)/urlmagic.conf"
 ################################################################################
 
 
+if {[catch {package require Tcl 8.5} err]} {
+	putlog "Error loading urlmagic: Tcl too old. Please see README."
+	putlog " $err or higher"
+	unset err
+	return false
+}
 
 namespace eval ::urlmagic {
 
@@ -31,6 +37,7 @@ foreach lib {http tls hook} {
 		return false
 	}
 }
+unset lib
 
 # Returns a plugin's namespace name with any surrounding ":" characters stripped
 # Used as the event identifier for the hook module
