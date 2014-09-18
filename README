@@ -21,7 +21,8 @@ In short, what's displayed and what isn't can be influenced by plugins.
 
 This script needs at least the following packages: http, tls and tcllib (for hook)
 It is advised to also install either gumbo or arabica to use the more fail-safe
-title parser.
+title parser. Your eggdrop needs to be compiled against Tcl 8.5 or higher. Tcl 8.4
+and below are at least untested, but probably won't work at all.
 
 Use your distribution's package management system to install the dependencies
 as appropriate.
@@ -41,5 +42,6 @@ FreeBSD:
     pkg_add -r tcllib tcltls
 
 
-Please report bugs to ente on IRCnet.
+Please report bugs to ente on IRCnet, and feel free to let me know if you use
+it, but didn't find a bug!
 
