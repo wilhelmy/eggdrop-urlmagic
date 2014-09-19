@@ -497,24 +497,22 @@ source $settings(config-file) ;# read it before initializing everything
   
 if {$settings(htmltitle) == "perl"} {
 	set settings(pipecmd) "$settings(perl-interpreter) $settings(base-path)/htmltitle_perlhtml5/htmltitle.pl"
-	variable use_tclx 0
+	set settings(use-tclx) 0
 	if {[catch {package require Tcl 8.6}]} {
 		load $settings(tclx-lib)
-		set use_tclx 1
+		set settings(use-tclx) 1
 	}
 	proc ::htmltitle {data} {
-		variable use_tclx
-
-		if {$use_tclx} {
+		if {$::urlmagic::settings(use-tclx)} {
 			pipe pr pw
 		} else {
 			lassign [chan pipe] pr pw
 		}
 
-		set fd [open "|$settings(pipecmd) >@ $pw" r+]
+		set fd [open "|$::urlmagic::settings(pipecmd) >@ $pw" w]
 		puts -nonewline $fd $data
 		close $fd
-		set title [read -nonewline $pr]
+		set title [gets $pr]
 		close $pr
 		close $pw ;# should happen automatically but what do I know
 		return $title
