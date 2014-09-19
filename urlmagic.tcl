@@ -495,12 +495,36 @@ namespace eval plugins {
 plugins::unload_all
 source $settings(config-file) ;# read it before initializing everything
   
-if {$settings(htmltitle) != "dumb"} {
+if {$settings(htmltitle) == "perl"} {
+	set settings(pipecmd) "$settings(perl-interpreter) $settings(base-path)/htmltitle_perlhtml5/htmltitle.pl"
+	variable use_tclx 0
+	if {[catch {package require Tcl 8.6}]} {
+		load $settings(tclx-lib)
+		set use_tclx 1
+	}
+	proc ::htmltitle {data} {
+		variable use_tclx
+
+		if {$use_tclx} {
+			pipe pr pw
+		} else {
+			lassign [chan pipe] pr pw
+		}
+
+		set fd [open "|$settings(pipecmd) >@ $pw" r+]
+		puts -nonewline $fd $data
+		close $fd
+		set title [read -nonewline $pr]
+		close $pr
+		close $pw ;# should happen automatically but what do I know
+		return $title
+	}
+} elseif {$settings(htmltitle) != "dumb"} {
 	load $settings(base-path)/htmltitle_$settings(htmltitle)/htmltitle.so
 	putlog "urlmagic: loaded $settings(htmltitle) htmltitle module"
 } else {
 	# "dumb" htmltitle implementation
-	proc htmltitle {data} {
+	proc ::htmltitle {data} {
 		set data [string map {\r "" \n ""} $data]
 		if {[regexp -nocase {<\s*?title\s*?>\s*?(.*?)\s*<\s*/title\s*>} $data - title]} {
 			return [string map {&#x202a; "" &#x202c; "" &rlm; ""} [string trim $title]]; # "for YouTube", says rojo

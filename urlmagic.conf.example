@@ -78,10 +78,24 @@ set settings(global-silent) no
 # in Tcl, which uses a simple regex. This doesn't always work, but should be
 # okay most of the time. Use this if you can't compile code for some reason.
 # Currently, best results are achieved by using the gumbo library, which is the
-# default for that reason.
+# default for that reason. However, it is not packaged on most Linux
+# distributions as of mid 2014. A workaround is to use the implementation in
+# perl (which has additional dependencies, see below as well as the README)
 set settings(htmltitle) "gumbo"
 #set settings(htmltitle) "arabica"
 #set settings(htmltitle) "dumb"
+#set settings(htmltitle) "perl" ;# see below
+
+# For the perl htmltitle implementation, you need either Tcl 8.6 or TclX 8.4)
+# as well as the HTML::HTML5::Parser cpan module (see README)
+# This is for 32-bit debian, it will probably be different if you use anything
+# else; if your eggdrop is linked against Tcl 8.6 you don't need to change it
+# at all.
+set settings(tclx-lib) "/usr/lib/libtclx8.4.so.0"
+
+# Here you can change the perl interpreter which is used by the title parser.
+# The default should probably work on most systems
+set settings(perl-interpreter) "/usr/bin/env perl"
 
 # Here you can specify which plugins to load. See the plugins directory for a
 # list of plugins. They each have a description and maybe settings which you

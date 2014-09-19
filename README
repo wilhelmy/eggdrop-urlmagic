@@ -80,6 +80,33 @@ as appropriate.
   * databases/sqlite3               (sqlite)
   * textproc/tcl-tDOM               (twitter)
 
+
+### Title parsers
+
+The "dumb" regex-based title extraction regexp is not very reliable. Therefore,
+there are multiple options for extracting the title out of the HTML documents
+downloaded from the server. The most reliable option is using Google's gumbo
+library, however it isn't packaged for any distributions I've checked (and
+neither is the much less robust arabica library, which has been around for
+several years longer). To avoid making each potential user compile their own
+gumbo version, I've written a title parser in perl that is invoked via pipe,
+because html5 parsers for perl are more easily available than for Tcl or C.
+
+Unfortunately, this introduces a dependency to either Tcl 8.6 or TclX. 
+
+This means that you will want to install the following packages on
+debian wheezy if your bot is linked against Tcl 8.5: 
+
+  * apt-get install libhtml-html5-parser-perl tclx8.4
+
+If your bot is linked against Tcl 8.6, you can leave tclx8.4 off and be done.
+Alternatively, you can install the perl packages from cpan (for instance if
+you're not on debian and your distribution doesn't have a package). The command
+is:
+
+  * cpan HTML::HTML5::Parser
+
+
 Please report bugs, gripes, missing operating systems in the table above, etc
 to ente on IRCnet, and feel free to let me know if you use it, or just contact
 me for chit-chat.
