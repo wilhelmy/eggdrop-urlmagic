@@ -100,6 +100,11 @@ debian wheezy if your bot is linked against Tcl 8.5:
   * apt-get install libhtml-html5-parser-perl tclx8.4
 
 If your bot is linked against Tcl 8.6, you can leave tclx8.4 off and be done.
+
+On OpenSuSE, you can find a repository/package for Perl's html5 parser here:
+
+  * http://software.opensuse.org/package/perl-HTML-HTML5-Parser
+
 Alternatively, you can install the perl packages from cpan (for instance if
 you're not on debian and your distribution doesn't have a package). The command
 is:

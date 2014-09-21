@@ -54,7 +54,9 @@ set settings(default-headers)        {Accept-Language "en, *;q=0.9"}
 
 # What format should be used for the nickname part of the url info that's sent
 # to the channel? %s is replaced by the nickname. To insert a literal %, you
-# need to use %%.
+# need to use %%. If you don't want the nickname to be inserted, you can set
+# this to "". You can also add things like colors and bold here (see the
+# eggdrop documentation for the codes).
 set settings(nick-format) "<%s>"
 
 # What format should be used for the URL title? %s is replaced by the link
@@ -86,15 +88,15 @@ set settings(htmltitle) "gumbo"
 #set settings(htmltitle) "dumb"
 #set settings(htmltitle) "perl" ;# see below
 
-# For the perl htmltitle implementation, you need either Tcl 8.6 or TclX 8.4)
-# as well as the HTML::HTML5::Parser cpan module (see README)
+# For the perl htmltitle implementation, you need Tcl 8.6 (or Tcl 8.5 and
+# TclX 8.4) as well as the HTML::HTML5::Parser cpan module (see README).
 # This is for 32-bit debian, it will probably be different if you use anything
 # else; if your eggdrop is linked against Tcl 8.6 you don't need to change it
-# at all.
+# at all. On 64-bit systems, you might need to use /usr/lib64/.
 set settings(tclx-lib) "/usr/lib/libtclx8.4.so.0"
 
 # Here you can change the perl interpreter which is used by the title parser.
-# The default should probably work on most systems
+# The default should probably work on most systems.
 set settings(perl-interpreter) "/usr/bin/env perl"
 
 # Here you can specify which plugins to load. See the plugins directory for a
