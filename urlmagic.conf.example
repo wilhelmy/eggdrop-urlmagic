@@ -88,13 +88,6 @@ set settings(htmltitle) "gumbo"
 #set settings(htmltitle) "dumb"
 #set settings(htmltitle) "perl" ;# see below
 
-# For the perl htmltitle implementation, you need Tcl 8.6 (or Tcl 8.5 and
-# TclX 8.4) as well as the HTML::HTML5::Parser cpan module (see README).
-# This is for 32-bit debian, it will probably be different if you use anything
-# else; if your eggdrop is linked against Tcl 8.6 you don't need to change it
-# at all. On 64-bit systems, you might need to use /usr/lib64/.
-set settings(tclx-lib) "/usr/lib/libtclx8.4.so.0"
-
 # Here you can change the perl interpreter which is used by the title parser.
 # The default should probably work on most systems.
 set settings(perl-interpreter) "/usr/bin/env perl"
