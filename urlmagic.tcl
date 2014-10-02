@@ -130,6 +130,11 @@ proc find_urls {nick uhost hand chan txt} {
 
 		set chan [chandname2name $chan] ;# support for IRCnet !channels
 
+		# kill all "" instances so we don't get extraneous space
+		# characters in case an empty string is inserted somewhere via
+		# e.g. $settings(nick-format) or a sloppy plugin.
+		set title(output) [lsearch -inline -not -all $title(output) ""]
+
 		if {!$settings(global-silent) && ![channel get $chan urlmagic-silent]} {
 			puthelp "PRIVMSG $chan :[join $title(output)]"
 		}
