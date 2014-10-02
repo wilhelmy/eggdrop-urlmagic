@@ -504,7 +504,7 @@ if {$settings(htmltitle) == "perl"} {
 	set settings(pipecmd) "$settings(perl-interpreter) $settings(base-path)/htmltitle_perlhtml5/htmltitle.pl"
 	set settings(use-tclx) 0
 	if {[catch {package require Tcl 8.6}]} {
-		load $settings(tclx-lib)
+		package require Tclx
 		set settings(use-tclx) 1
 	}
 	proc ::htmltitle {data} {
