@@ -25,11 +25,6 @@ set settings(max-download) 1048576
 # if cookie shelf life > this many minutes, eat it sooner
 set settings(max-cookie-age) 2880
 
-# .chanset #channel +urlmagic -- change this if you want to use a different
-# flag to enable urlmagic on a channel. Setting this is deprecated because I
-# see no good reason to being able to change it. Do not change.
-set settings(udef-flag) urlmagic
-
 # HTTP User-Agent which will be sent with each request
 set settings(user-agent) "Mozilla/5.0 (compatible; TCL [info patchlevel] HTTP library) 20110501"
 

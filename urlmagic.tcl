@@ -2,9 +2,11 @@
 # Copyright (c) 2011      by Steve "rojo" Church
 #           (c) 2013-2014 by Moritz "ente" Wilhelmy
 #
-# See README and LICENSE for more information.
+# See the README, INSTALL and LICENSE files for more information.
+# Most people will want to skip this file entirely and will only need to modify
+# the config file.
 
-# User variables, allow changing the config file that will be loaded by urlmagic
+# User variables, allow changing the config file that will be loaded by urlmagic:
 namespace eval ::urlmagic {
 
 # Don't change this. It points to the directory where urlmagic is located.
@@ -14,6 +16,12 @@ set settings(base-path) [file dirname [info script]]
 # Defaults to the file "urlmagic.conf" in the same directory this script is
 # located in.
 set settings(config-file) "$settings(base-path)/urlmagic.conf"
+
+# .chanset #channel +urlmagic -- change this if you want to use a different
+# flag to enable urlmagic on a channel. Setting this is deprecated because I
+# see no good reason to being able to change it. Do not change.
+# (If you know a good reason, I'd be willing to de-deprecate it)
+set settings(udef-flag) urlmagic
 
 }
 
