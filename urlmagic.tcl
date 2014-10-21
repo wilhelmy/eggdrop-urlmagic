@@ -382,15 +382,23 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 		} else {
 			return $data
 		}
-	} else {
+	} elseif {$settings(content-type) != ""} {
 		return "Content type: $settings(content-type)"
+	} else {
+		warn "No content type set. Please report a bug and include the URL."
 	}
+	return
 }
 
 proc process_title {url} {
 #	returns $ret(url, content-length, tinyurl [where $url length > max], title)
 	variable settings
 	variable title
+
+	# clean up previous state
+	set settings(title) ""
+	set settings(content-type) ""
+	set settings(url) ""
 
 	set title(data)		  [fetch $url "" $settings(default-headers)]
 	set title(url)		  $url
