@@ -552,7 +552,7 @@ bind sign - * ${ns}::unignore
 bind pubm - * ${ns}::find_urls
 
 # Initialise https
-::http::register https 443 ::tls::socket
+::http::register https 443 "::tls::socket $settings(tls-options)"
 ::http::config -useragent $settings(user-agent)
 
 putlog "urlmagic.tcl $VERSION loaded."
