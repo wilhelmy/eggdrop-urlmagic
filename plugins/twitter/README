@@ -1,8 +1,13 @@
 Install gregkh's bti twitter client. If you're on debian wheezy, install it
 from backports as follows, provided that the backports repo is already enabled
-(you might want to google that):
+(you might want to google how to enable the backports repo in case it isn't):
 
    # apt-get -t wheezy-backports install bti
+
+On debian jessie or later, or ubuntu, use the following command instead:
+
+   # apt-get install bti
+
 
 This will install a version of bti that is OAuth-capable.
 
