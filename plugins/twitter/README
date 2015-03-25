@@ -8,6 +8,15 @@ On debian jessie or later, or ubuntu, use the following command instead:
 
    # apt-get install bti
 
+Fedora/(possibly also Red Hat/CentOS):
+
+   # yum install bti
+
+Gentoo:
+
+   # emerge -v net-misc/bti
+
+
 
 This will install a version of bti that is OAuth-capable.
 
