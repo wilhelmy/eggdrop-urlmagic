@@ -58,7 +58,7 @@ proc reopen_db { } {
 	# if the database is moved.
 	#
 	# While messing with the database, use
-	#   .set urlmagic::skip_sqlite3 1 
+	#   .set urlmagic::plugins::sqlite::skip_sqlite3 1 
 	# to disable writes to the database until you're done.
 	variable skip_sqlite3
 	variable settings
