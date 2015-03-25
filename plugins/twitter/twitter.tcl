@@ -33,7 +33,10 @@ proc twitter_login {{tries 0}} {
 	set url [$form getAttribute action]
 
 	foreach input $inputs {
-		catch { set post([$input getAttribute name]) [$input getAttribute value] }
+		catch {
+			set post([$input getAttribute name]) \
+			         [$input getAttribute value]
+		}
 	}
 
 	$dom delete
@@ -49,8 +52,11 @@ proc twitter_login {{tries 0}} {
 	
 	if {[logged_in]} { return }
 
-	if {[incr tries] < 3} { twitter_login $tries } { putlog "Twitter login failed.  Tried $tries times." }
-
+	if {[incr tries] < 3} {
+		twitter_login $tries
+	} else {
+		putlog "Twitter login failed.  Tried $tries times."
+	}
 }
 
 proc tweet {what} {
