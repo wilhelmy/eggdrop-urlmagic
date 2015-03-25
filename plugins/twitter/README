@@ -1,3 +1,6 @@
+Installation
+============
+
 Install gregkh's bti twitter client. If you're on debian wheezy, install it
 from backports as follows, provided that the backports repo is already enabled
 (you might want to google how to enable the backports repo in case it isn't):
@@ -39,4 +42,18 @@ you need to open in your web browser:
 Append the access_token and access_token_secret stuff to ~/.bti. Now you can
 test if tweeting from the command line works by running bti.
 
-Then, edit the twitter settings of your config file.
+Then, add the twitter settings from twitter.conf to your config file and edit
+them.
+
+
+Scripting
+=========
+
+In order to use the tweet command in a script, check if it exists before
+invoking it:
+
+  if {[info commands ::urlmagic::plugins::twitter::tweet] != {}} {
+    ::urlmagic::plugins::twitter::tweet $mytext
+  }
+
+A script that allows channel members to tweet things can be found in twerp.tcl.
