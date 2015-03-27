@@ -3,12 +3,15 @@
 # Uses bti written by Greg Kroah-Hartman - http://github.com/gregkh/bti/
 # See twitter.conf for the settings (append them to your urlmagic config)
 
-set VERSION 1.1+hg
+set VERSION 1.1+hg+1
 
 proc tweet {what} {
 	variable settings
 	set what [string range $what 0 139]
-	set fd [open "|$settings(tweet-command)" w]
+	set logfd [open "$settings(log-file)" w]
+	puts $logfd "*** [clock format [clock seconds]] - $what"
+	close $logfd
+	set fd [open "|$settings(tweet-command) >>$settings(log-file) 2>&1" w]
 	puts $fd $what
 	close $fd
 }

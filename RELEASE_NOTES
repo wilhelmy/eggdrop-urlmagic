@@ -1,5 +1,8 @@
 2014-????? (Version 2.0)
 
+  * Rewrite twitter support to pipe tweets to an external program rather than
+    dealing with the twitter mobile site.
+
   * Implement a plugin system so all these things can be loaded, unloaded and
     reloaded on the fly; uses hook package from tcllib
 

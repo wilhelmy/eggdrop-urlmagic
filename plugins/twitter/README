@@ -19,11 +19,22 @@ Gentoo:
 
    # emerge -v net-misc/bti
 
+Alternatively, if there is no package for bti on your distribution or you don't
+want to mess around with backports, you can install ttytter instead.
+
+Debian:
+
+   # apt-get install ttytter
+
+FreeBSD:
+
+   net-im/ttytter
 
 
-This will install a version of bti that is OAuth-capable.
+Using bti
+---------
 
-Next, execute the following command as the user you run eggdrop as:
+After you've installed bti, execute the following command as the user you run eggdrop as:
 
    $ echo 'consumer_key=cZy8DdioswAfu3LJYg6E2w' > ~/.bti
    $ echo 'consumer_secret=fnIGGU0T12mMWKjmThUdSeKN32NLWfmnwapwubVQ' >> ~/.bti
@@ -44,6 +55,19 @@ test if tweeting from the command line works by running bti.
 
 Then, add the twitter settings from twitter.conf to your config file and edit
 them.
+
+
+Using ttytter
+-------------
+
+The process is similar to bti.
+
+Launch ttytter on the command prompt, it will generate an URL which you will
+need to open in your browser. Copy-paste the PIN out of the website and into
+ttytter, hit return. ttytter will initialise its config files and terminate.
+
+That should be it, but you can make sure whether or not it works by starting
+ttytter again and e.g. checking whether you can tweet.
 
 
 Scripting
