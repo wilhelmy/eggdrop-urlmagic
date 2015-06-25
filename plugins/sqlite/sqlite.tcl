@@ -97,7 +97,7 @@ proc init_db {} {
 		    , mention_count     INTEGER DEFAULT 0    -- number of times it was mentioned
 		    , content_type      TEXT
 		    , html_title        TEXT
-		    , dead_link         BOOLEAN NOT NULL DEFAULT FALSE
+		    , dead_link         BOOLEAN NOT NULL DEFAULT 0
 		    );
 	}
 }
