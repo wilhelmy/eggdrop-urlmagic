@@ -34,8 +34,6 @@ bitbucket page.
 1.6
 % package require http
 2.7.7
-% package require tdom ;#optional, only required if twitter plugin is enabled
-0.8.3
 % package require sqlite3 ;#optional, required by sqlite plugin.
 3.7.13
 % exit
