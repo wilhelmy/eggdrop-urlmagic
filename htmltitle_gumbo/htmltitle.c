@@ -26,8 +26,6 @@
 #	define CONST84
 #endif
 
-volatile static char const rcsid[] = "$Id: htmltitle.C,v 1.3.1.1 2014/01/01 19:17:17 nerv Exp nerv $";
-
 Tcl_CmdProc Tcl_htmltitle;
 int Htmltitle_Init(Tcl_Interp *interp);
 

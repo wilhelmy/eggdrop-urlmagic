@@ -307,5 +307,3 @@ db eval $sql {
 % ;# table
 
 footer
-
-# $Id: mostwanted.cgi,v 1.12 2013/02/16 18:42:12 eggderp Exp $
