@@ -39,8 +39,8 @@ if {[catch {package require Tcl 8.5} err]} {
 
 namespace eval ::urlmagic {
 
-foreach lib {http tls hook} {
-	if {[catch {package require $lib}]} {
+foreach lib {"http 2.0" tls hook} {
+	if {[catch "package require $lib"]} {
 		putlog "Error loading urlmagic: Library $lib is missing. See README for more information."
 		return false
 	}
