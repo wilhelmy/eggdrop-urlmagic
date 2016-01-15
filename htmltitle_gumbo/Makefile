@@ -7,7 +7,7 @@ TCL_INC=	-I$(TCL_PREFIX)/include/tcl8.5
 TCL_LIB=	
 
 # Uncomment the following line and adjust the path if you installed gumbo in a
-# directory which is not part of ld.conf.so, e.g. /usr/local/lib on OpenSuSE or
+# directory which is not part of ld.so.conf, e.g. /usr/local/lib on OpenSuSE or
 # Debian >= jessie. Alternatively, you can add the path to /etc/ld.so.conf and
 # run ldconfig.
 #LDFLAGS+=	-Wl,-rpath,/usr/local/lib
