@@ -1,0 +1,7 @@
+glob:.*.sw?
+glob:*.orig
+glob:*.so
+glob:*.o
+glob:*.a
+glob:*.py?
+glob:*.bak
