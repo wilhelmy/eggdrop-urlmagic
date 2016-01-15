@@ -70,6 +70,7 @@ the plugin you want to use for a file called README.
   * devel/mercurial                 (optional)
   * devel/tcllib devel/tcltls       (core)
   * databases/tcl-sqlite3           (sqlite)
+  * devel/gumbo                     (possible title parser)
 
 #### NetBSD (pkgsrc package names):
 

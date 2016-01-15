@@ -8,7 +8,7 @@ As it turns out, Tcl 8.5 has introduced some rather crucial features I don't
 really want to miss. Please check .status if your bot is compiled against Tcl
 8.4 or lower. If it is, maybe it's time for an update? ;)
 
-(While you're at it, check out eggdrop 1.6.21 too. eggdrop has improved
+(While you're at it, check out eggdrop 1.6.21 or 1.8 too. eggdrop has improved
 significantly since below 1.6.20.)
 
 Next, check if you can load the "hook" package from tcllib, as well as the
@@ -32,9 +32,21 @@ bitbucket page.
 0.1
 % package require tls
 1.6
-% package require http
+% package require http 2.0
 2.7.7
 % package require sqlite3 ;#optional, required by sqlite plugin.
 3.7.13
 % exit
 me@shellprovider:~/eggdrop$
+
+
+I have issues compiling htmltitle_gumbo
+---------------------------------------
+
+Please make sure the paths in htmltitle_gumbo/Makefile are correct, the line
+containing "-Wl,-rpath" is uncommented if you need it, you are using GNU
+make and you have the development tools (C compiler, system headers, ...)
+installed.
+
+You can download a statically linked 32 bit version of htmltitle_gumbo.so here:
+https://bitbucket.org/wilhelmy/eggdrop-urlmagic/downloads/htmltitle_gumbo_debian_wheezy32.so
