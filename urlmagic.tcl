@@ -1,6 +1,6 @@
 #! tclsh
 # Copyright (c) 2011      by Steve "rojo" Church
-#           (c) 2013-2014 by Moritz "ente" Wilhelmy
+#           (c) 2013-2016 by Moritz "ente" Wilhelmy
 #
 # See the README, INSTALL and LICENSE files for more information.
 # Most people will want to skip this file entirely and will only need to modify
@@ -539,8 +539,12 @@ if {$settings(htmltitle) == "perl"} {
 		return $title
 	}
 } elseif {$settings(htmltitle) != "dumb"} {
-	load $settings(base-path)/htmltitle_$settings(htmltitle)/htmltitle.so
-	putlog "urlmagic: loaded $settings(htmltitle) htmltitle module"
+	if {[catch {load $settings(base-path)/htmltitle_$settings(htmltitle)/htmltitle.so}]} {
+		warn "Error loading $settings(htmltitle). See the TROUBLESHOOTING file for more information"
+		return -code error
+	} else {
+		putlog "urlmagic: loaded $settings(htmltitle) htmltitle module"
+	}
 } else {
 	# "dumb" htmltitle implementation
 	proc ::htmltitle {data} {
