@@ -538,20 +538,20 @@ if {$settings(htmltitle) == "perl"} {
 		close $pw ;# should happen automatically but what do I know
 		return $title
 	}
-} elseif {$settings(htmltitle) != "dumb"} {
-	if {[catch {load $settings(base-path)/htmltitle_$settings(htmltitle)/htmltitle.so}]} {
-		warn "Error loading $settings(htmltitle). See the TROUBLESHOOTING file for more information"
-		return -code error
-	} else {
-		putlog "urlmagic: loaded $settings(htmltitle) htmltitle module"
-	}
-} else {
+} elseif {$settings(htmltitle) == "dumb"} {
 	# "dumb" htmltitle implementation
 	proc ::htmltitle {data} {
 		set data [string map {\r "" \n ""} $data]
 		if {[regexp -nocase {<\s*?title\s*?>\s*?(.*?)\s*<\s*/title\s*>} $data - title]} {
 			return [string map {&#x202a; "" &#x202c; "" &rlm; ""} [string trim $title]]; # "for YouTube", says rojo
 		}
+	}
+} else {
+	if {[catch {load $settings(base-path)/htmltitle_$settings(htmltitle)/htmltitle.so}]} {
+		warn "Error loading $settings(htmltitle). See the TROUBLESHOOTING file for more information"
+		return -code error
+	} else {
+		putlog "urlmagic: loaded $settings(htmltitle) htmltitle module"
 	}
 }
 
