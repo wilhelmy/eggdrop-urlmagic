@@ -231,7 +231,7 @@ proc extract_charset {content_type charset} {
 	if {[regexp -nocase {charset\s*=\s*\"((?:[^""]|\\\")*)\"} $content_type -> cs]} {
 		set charset [string map {{\"} \"} $cs]
 	} else {
-		regexp -nocase {charset\s*=\s*(\S+?);?} $content_type -> charset
+		regexp -nocase {charset\s*=\s*([a-zA-Z0-9\-]+?);?} $content_type -> charset
 	}
 	regsub -all -nocase {[^a-z0-9_-]} $charset "" charset
 	return $charset
@@ -246,7 +246,7 @@ proc fix_charset {data charset s_type} {
 	if {[binary scan $data cucucucu b1 b2 b3 b4] < 4} return
 
 	set stripbytes 0
-
+	
 	# TODO is UCS-4 supported at all?
 	# FIXME BOM stripping is currently broken. Decoding of UTF-16BE will
 	# fail, decoded UTF-16LE will contain the BOM which will confuse the
@@ -260,15 +260,15 @@ proc fix_charset {data charset s_type} {
 		set stripbytes 3
 	} else {
 
-	# Next, try the content type. HTML content may override this.
-	set charset [extract_charset $s_type $charset]
+		# Next, try the content type. HTML content may override this.
+		set charset [extract_charset $s_type $charset]
 
-	# Next, try the header meta tags, which may override the charset sent
-	# via HTTP headers
-	# FIXME: this implementation is ugly. Use gumbo for this and parse twice?
-	set charset [extract_charset $data $charset]
+		# Next, try the header meta tags, which may override the charset sent
+		# via HTTP headers
+		# FIXME: this implementation is ugly. Use gumbo for this and parse twice?
+		set charset [extract_charset $data $charset]
 	}
-
+  set data [string range $data $stripbytes [string length $data]]
 	set charset [http::CharsetToEncoding $charset]
 
 	if {$charset == "binary"} {return ""}
@@ -332,14 +332,24 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	set data ""
 
 	if {[catch $command http]} {
-		if {[catch {set settings(error) "Error [::http::ncode $http]: [::http::error $http]"}]} {
-			set data "Error: Connection timed out."
-		}
-		::http::cleanup $http
-		return $data
+		set settings(error) "HTTP error: $http"
+		return ""
 	} else {
 		update_cookies $http
-		set data [::http::data $http]
+		set err [::http::error $http]
+		set status [::http::status $http]
+		if {$status == "error"} {
+			set settings(error) "Error: $err"
+			return ""
+		} elseif {$status == "reset"} {
+			set settings(error) "Error: Connection reset"
+			return ""
+		} elseif {$status == "timeout"} {
+			set settings(error) "Error: Connection timed out"
+			return ""
+		} else {
+			set data [::http::data $http]
+		}
 	}
 	
 	upvar #0 $http state
@@ -347,6 +357,9 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	foreach {name val} $state(meta) { set meta([string tolower $name]) $val }
 
 	# $state(status) == "toobig" in case the file wasn't downloaded completely because it was too big
+	if {$state(status) == "toobig"} {
+		putlog "ente: toobig $state(currentsize)"
+	}
 
 	::http::cleanup $http
 
@@ -413,9 +426,9 @@ proc process_title {url} {
 	regsub -all {\s+} [string trim [htmltitle $title(data)]] { } title(title)
 	if {$title(title) == ""} {
 		if {[string length $settings(error)] > 0} {
-			set ret(title) $settings(error)
+			set title(title) $settings(error)
 		} else {
-			set ret(title) "Content type: $settings(content-type)"
+			set title(title) "Content type: $settings(content-type)"
 		}
 	}
 
