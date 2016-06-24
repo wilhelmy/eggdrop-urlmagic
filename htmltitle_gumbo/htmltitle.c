@@ -27,7 +27,6 @@
 #endif
 
 Tcl_CmdProc Tcl_htmltitle;
-int Htmltitle_Init(Tcl_Interp *interp);
 
 int Htmltitle_Init(Tcl_Interp *interp)
 {
@@ -41,57 +40,65 @@ int Htmltitle_Init(Tcl_Interp *interp)
 	return TCL_OK;
 }
 
-#if 1 /* part of the gumbo examples folder */
-#define assert(x) if (!(x)) return "";
-static const char* find_title(const GumboNode* root) {
-  assert(root->type == GUMBO_NODE_ELEMENT);
-  assert(root->v.element.children.length >= 2);
+int Htmltitle_Unload(Tcl_Interp *interp, int flags)
+{
+	return TCL_OK;
+}
+
+static const char* find_title(const GumboNode* root)
+{
+  if(root->type != GUMBO_NODE_ELEMENT) return NULL;
 
   const GumboVector* root_children = &root->v.element.children;
-  GumboNode* head = NULL;
   for (int i = 0; i < root_children->length; ++i) {
-    GumboNode* child = root_children->data[i];
-    if (child->type == GUMBO_NODE_ELEMENT &&
-        child->v.element.tag == GUMBO_TAG_HEAD) {
-      head = child;
-      break;
-    }
-  }
-  assert(head != NULL);
-
-  GumboVector* head_children = &head->v.element.children;
-  for (int i = 0; i < head_children->length; ++i) {
-    GumboNode* child = head_children->data[i];
-    if (child->type == GUMBO_NODE_ELEMENT &&
-        child->v.element.tag == GUMBO_TAG_TITLE) {
-      if (child->v.element.children.length != 1) {
-        return "";
+    GumboNode* child = (GumboNode*)root_children->data[i];
+    if (child->type == GUMBO_NODE_ELEMENT) 
+    {
+      if (child->v.element.tag == GUMBO_TAG_TITLE)
+      {
+        if (child->v.element.children.length != 1) 
+        {
+          return "";
+        }
+        GumboNode* title_text = (GumboNode*)child->v.element.children.data[0];
+        if(title_text->type != GUMBO_NODE_TEXT)
+          return NULL;
+        return title_text->v.text.text;
       }
-      GumboNode* title_text = child->v.element.children.data[0];
-      assert(title_text->type == GUMBO_NODE_TEXT);
-      return title_text->v.text.text;
+      const char * title = find_title( child );
+      if (title) return title;
     }
   }
-  return "";
+  return NULL;
 }
-#undef assert
-#endif
 
 int Tcl_htmltitle(ClientData dummy, Tcl_Interp *interp, int argc, CONST84 char *argv[])
 {
 	char const error[] = "Wrong # args: usage is \"htmltitle str\"";
+	char const notfound[] = "";
 
 	if (argc != 2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(error, -1));
 		return TCL_ERROR;
 	}
 
-	size_t input_length = strlen(argv[1]);
+  char * str = (char*)argv[1];
+  /*
+  if ((unsigned char)str[0] == 0xEF
+    && (unsigned char)str[1] == 0xBB
+    && (unsigned char)str[2] == 0xBF) // skip bom or else gumbo fails
+    str += 3;
+  */
+  
+	size_t input_length = strlen(str);
 	GumboOutput* output = gumbo_parse_with_options(
-			&kGumboDefaultOptions, argv[1], input_length);
+			&kGumboDefaultOptions, str, input_length);
 	const char* title = find_title(output->root);
 
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(title, -1));
+  if (title)
+  	Tcl_SetObjResult(interp, Tcl_NewStringObj(title, -1));
+  else
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(notfound, -1));
 
 	gumbo_destroy_output(&kGumboDefaultOptions, output);
 
