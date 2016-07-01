@@ -356,11 +356,6 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	set data [fix_charset $data $state(charset) $state(type)]
 	foreach {name val} $state(meta) { set meta([string tolower $name]) $val }
 
-	# $state(status) == "toobig" in case the file wasn't downloaded completely because it was too big
-	if {$state(status) == "toobig"} {
-		putlog "ente: toobig $state(currentsize)"
-	}
-
 	::http::cleanup $http
 
 	if {[info exists meta(location)]} {
