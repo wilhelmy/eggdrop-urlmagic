@@ -3,7 +3,7 @@
 GUMBO_INC=	$(shell pkg-config --cflags gumbo)
 GUMBO_LIB=	$(shell pkg-config --libs gumbo)
 TCL_PREFIX=	/usr
-TCL_INC=	-I$(TCL_PREFIX)/include/tcl8.5
+TCL_INC=	-I$(TCL_PREFIX)/include/tcl8.6
 TCL_LIB=	
 
 # Uncomment the following line and adjust the path if you installed gumbo in a
