@@ -100,56 +100,59 @@ proc ignore {uhost chan} {
 }
 
 proc find_urls {nick uhost hand chan txt} {
-
-	variable settings; variable ns
+	variable settings
 
 	if {[matchattr $hand $settings(ignore-flags)] || ![channel get $chan $settings(udef-flag)]} { return }
 
-	if {[regexp -nocase $settings(url-regex) $txt url] && [string length $url] > 7} {
+	if {![regexp -nocase $settings(url-regex) $txt url] || [string length $url] < 9} { return }
 
-		if {[ignore $uhost $chan]} return
+	# nuke array
+	variable title
+	foreach v [array names title] { unset title($v) }
 
-		# FIXME should this be just // to account for URLs like //imgur.com/ where the protocol is implicit?
-		# In any case, wouldn't work as expected. rewrite.
-		set url_complete [string match *://* $url]
-		if {!$url_complete} { set url "http://$url" }
+	if {[ignore $uhost $chan]} return
 
-		variable title
-		# nuke array
-		foreach v [array names title] { unset title($v) }
+	# FIXME should this be just // to account for URLs like //imgur.com/ where the protocol is implicit?
+	# In any case, wouldn't work as expected. rewrite.
+	set url_complete [string match *://* $url]
+	if {!$url_complete} { set url "http://$url" }
 
-		array set title [list nick $nick uhost $uhost hand $hand \
-			chan $chan text $txt was-complete $url_complete]
-		# $title(url, content-length, tinyurl [where $url length > max], title, error [boolean])
-		process_title $url
+	array set title [list nick $nick uhost $uhost hand $hand \
+		chan $chan text $txt was-complete $url_complete \
+		url $url]
 
-		set title_or_content_type [any $title(title) "Content type: $title(content-type)"]
+	# Pre-Fetch hook: Called before anything is downloaded, allows plugins to override the URL before downloading it
+	hook::call urlmagic <Pre-Fetch>
+	process_title $title(url)
+	# Post-Fetch: Called immediately after downloading the page
+	hook::call urlmagic <Post-Fetch>
 
-		# list used for string building
-		set title(output) [list \
-			[format $settings(nick-format) $nick] \
-			[format $settings(title-format) $title_or_content_type]]
+	set title_or_content_type [any $title(title) "Content type: $title(content-type)"]
 
-		# Pre-String hook: Called before the string builders are invoked.
-		hook::call urlmagic <Pre-String> 
+	# list used for string building
+	set title(output) [list \
+		[format $settings(nick-format) $nick] \
+		[format $settings(title-format) $title_or_content_type]]
 
-		# String hook: Called for all string builders
-		hook::call urlmagic <String>
+	# Pre-String hook: Called before the string builders are invoked.
+	hook::call urlmagic <Pre-String> 
 
-		set chan [chandname2name $chan] ;# support for IRCnet !channels
+	# String hook: Called for all string builders
+	hook::call urlmagic <String>
 
-		# kill all "" instances so we don't get extraneous space
-		# characters in case an empty string is inserted somewhere via
-		# e.g. $settings(nick-format) or a sloppy plugin.
-		set title(output) [lsearch -inline -not -all $title(output) ""]
+	set chan [chandname2name $chan] ;# support for IRCnet !channels
 
-		if {!$settings(global-silent) && ![channel get $chan urlmagic-silent]} {
-			puthelp "PRIVMSG $chan :[join $title(output)]"
-		}
+	# kill all "" instances so we don't get extraneous space
+	# characters in case an empty string is inserted somewhere via
+	# e.g. $settings(nick-format) or a sloppy plugin.
+	set title(output) [lsearch -inline -not -all $title(output) ""]
 
-		# Post-String hook: Called after everything is done
-		hook::call urlmagic <Post-String>
+	if {!$settings(global-silent) && ![channel get $chan urlmagic-silent]} {
+		puthelp "PRIVMSG $chan :[join $title(output)]"
 	}
+
+	# Post-String hook: Called after everything is done
+	hook::call urlmagic <Post-String>
 }
 
 # TODO: rewrite cookie code.
@@ -268,7 +271,10 @@ proc fix_charset {data charset s_type} {
 		# FIXME: this implementation is ugly. Use gumbo for this and parse twice?
 		set charset [extract_charset $data $charset]
 	}
-  set data [string range $data $stripbytes [string length $data]]
+
+	# This might be incorrect:
+	set data [string range $data $stripbytes [string length $data]]
+
 	set charset [http::CharsetToEncoding $charset]
 
 	if {$charset == "binary"} {return ""}
