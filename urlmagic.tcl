@@ -394,9 +394,6 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 			# It was a HEAD request, redo the request with GET
 			return [fetch $url "" $headers [incr iterations] 0]
 		} else {
-			exec mkdir -p /tmp/foo
-			set tmpfd [open /tmp/foo/[expr rand()] w]
-			puts $tmpfd $data; close $tmpfd
 			return $data
 		}
 	} elseif {$settings(content-type) != ""} {
