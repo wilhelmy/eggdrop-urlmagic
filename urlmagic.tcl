@@ -520,11 +520,6 @@ namespace eval plugins {
 		}
 	}
 
-	proc reload_all {} {
-		unload_all
-		load_all
-	}
-
 } ;# end namespace "plugins"
 
 plugins::unload_all
