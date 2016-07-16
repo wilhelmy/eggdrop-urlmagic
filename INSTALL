@@ -1,5 +1,5 @@
 Start with cloning the hg repo. This will make updates a lot easier, in case
-you find a bug (very likely).
+you find a bug (not unlikely).
 
    $ cd ~/eggdrop/scripts # assuming you installed eggdrop to ~/eggdrop
    $ hg clone https://bitbucket.org/wilhelmy/eggdrop-urlmagic/
@@ -31,6 +31,8 @@ use gumbo for best results and to avoid garbled unicode or HTML entities).
 There is currently no debian package for either of them, so you may have to
 compile them from source. I didn't find any other html5-capable HTML parsers
 which are currently packaged by debian, if you know of one, please let me know!
+(On debian stretch, it looks like you're lucky and all you have to do is
+install libgumbo-dev)
 
 If you can't compile anything at all, please use the "dumb" setting for
 htmltitle. This will work in most, but not all cases.

@@ -47,6 +47,10 @@ the plugin you want to use for a file called README.
   * apt-get install tcllib tcl-tls  (no matter what plugins are enabled; "core")
   * apt-get install libsqlite3-tcl  (if sqlite plugin is enabled)
 
+On Debian stretch and above, there is a package for the gumbo title parser:
+
+  * apt-get install libgumbo-dev build-essentials (optional, possible title parser)
+
 #### Red Hat / CentOS:
 
   * yum install mercurial           (optional)
