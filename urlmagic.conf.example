@@ -73,7 +73,7 @@ set settings(global-silent) no
 # You probably won't need this, but make sure none of your other scripts 
 # registers tls::socket into the http module for tls support, or else you
 # might accidentally turn off TLSv1 support.
-set settings(tls-options) {-ssl2 no -ssl3 yes -tls1 yes}
+set settings(tls-options) {-ssl2 no -tls1 yes}
 
 # Uncomment either of the following lines, gumbo is recommended but will
 # require you to install the Google gumbo library and to compile a Tcl module
