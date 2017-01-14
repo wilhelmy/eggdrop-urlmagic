@@ -68,6 +68,7 @@ On Debian stretch and above, there is a package for the gumbo title parser:
   * emerge -v mercurial             (optional)
   * emerge -v tcllib dev-tcltk/tls  (core)
   * emerge -v sqlite                (sqlite plugin)
+  * emerge -v dev-libs/gumbo        (possible title parser)
 
 #### FreeBSD (port names):
 
