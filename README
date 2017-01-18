@@ -49,7 +49,7 @@ the plugin you want to use for a file called README.
 
 On Debian stretch and above, there is a package for the gumbo title parser:
 
-  * apt-get install libgumbo-dev build-essentials (optional, possible title parser)
+  * apt-get install libgumbo-dev build-essential (optional, possible title parser)
 
 #### Red Hat / CentOS:
 
