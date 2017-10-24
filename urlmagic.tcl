@@ -68,7 +68,7 @@ variable cookies
 variable ns [namespace current]
 variable ignores ;# temporary ignores
 
-variable request ;# contains process_title's things, also used for string building by hooks
+variable title ;# contains process_title's things, also used for string building by hooks
 
 proc unignore {nick uhost hand chan msg} {
 	# HACK: just unignore someone leaving *any* channel
