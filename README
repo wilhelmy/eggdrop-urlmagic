@@ -39,48 +39,34 @@ as appropriate.
 For optional dependencies introduced by specific plugins, check the directory of
 the plugin you want to use for a file called README.
 
+As of 2017-10-25 the HTTP implementation used by urlmagic has been changed to
+TclCurl, which simplifies the code and is more robust. You now need to install
+tclcurl instead of tcltls for urlmagic to work - distributions which don't have
+a tclcurl package (RedHat, Gentoo, FreeBSD) have been stripped from the
+examples. Please (make someone) package it and notify me.
+
 ### Examples:
 
 #### Debian / Ubuntu:
 
   * apt-get install mercurial       (optional; makes updating easier)
-  * apt-get install tcllib tcl-tls  (no matter what plugins are enabled; "core")
+  * apt-get install tcllib tclcurl  (no matter what plugins are enabled; "core")
   * apt-get install libsqlite3-tcl  (if sqlite plugin is enabled)
 
 On Debian stretch and above, there is a package for the gumbo title parser:
 
   * apt-get install libgumbo-dev build-essential (optional, possible title parser)
 
-#### Red Hat / CentOS:
-
-  * yum install mercurial           (optional)
-  * yum install tcllib tcltls       (core)
-  * yum install sqlite-tcl          (sqlite plugin)
-
 #### OpenSuSE:
 
   * zypper install mercurial        (optional)
-  * zypper install tcllib tls       (core)
+  * zypper install tcllib tclcurl   (core)
   * (sqlite plugin does not require extra packages to be installed)
-
-#### Gentoo:
-
-  * emerge -v mercurial             (optional)
-  * emerge -v tcllib dev-tcltk/tls  (core)
-  * emerge -v sqlite                (sqlite plugin, enable tcl USE flag)
-  * emerge -v dev-libs/gumbo        (possible title parser)
-
-#### FreeBSD (port names):
-
-  * devel/mercurial                 (optional)
-  * devel/tcllib devel/tcltls       (core)
-  * databases/tcl-sqlite3           (sqlite)
-  * devel/gumbo                     (possible title parser)
 
 #### NetBSD (pkgsrc package names):
 
   * devel/mercurial                 (optional)
-  * devel/tcllib security/tcl-tls   (core)
+  * devel/tcllib wip/tcl-curl       (core)
   * databases/sqlite3               (sqlite)
 
 
