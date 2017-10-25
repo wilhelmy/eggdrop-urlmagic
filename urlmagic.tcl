@@ -347,7 +347,7 @@ proc fetch {url {post ""} {headers {}} {validate 1}} {
 	set curl [::curl::init]
 
 	$curl configure -url $url                       \
-                  -failonerror 1                  \
+	                -failonerror 1                  \
 	                -nosignal 1                     \
 	                -timeout $settings(timeout)     \
 	                -nobody $validate               \
@@ -358,8 +358,9 @@ proc fetch {url {post ""} {headers {}} {validate 1}} {
 	                -maxredirs 9                    \
 	                -headervar curlheaders          \
 	                -bodyvar data                   \
+			-useragent $settings(user-agent)\
 	;# todo: -progressproc ${ns}::progresshandler\
-			#-canceltransvar ${curl}cancel   \ <- this is documented in TclCurl but doesn't exist.. wtf
+	#-canceltransvar ${curl}cancel   \ <- this is documented in TclCurl but doesn't exist.. wtf
 	#-errorbuffer curlerror       \
 
 	set domain [lindex [split $url /] 2]
