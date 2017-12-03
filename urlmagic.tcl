@@ -39,7 +39,7 @@ if {[catch {package require Tcl 8.5} err]} {
 
 namespace eval ::urlmagic {
 
-foreach lib {"http 2.0" tls hook} {
+foreach lib {hook TclCurl} {
 	if {[catch "package require $lib"]} {
 		putlog "Error loading urlmagic: Library $lib is missing. See README for more information."
 		return false
@@ -135,7 +135,7 @@ proc find_urls {nick uhost hand chan txt} {
 		[format $settings(title-format) $title_or_content_type]]
 
 	# Pre-String hook: Called before the string builders are invoked.
-	hook::call urlmagic <Pre-String> 
+	hook::call urlmagic <Pre-String>
 
 	# String hook: Called for all string builders
 	hook::call urlmagic <String>
@@ -162,7 +162,7 @@ proc update_cookies {tok} {
 
 	upvar #0 $tok state
 	set domain [lindex [split $state(url) /] 2]
-	if {![info exists cookies($domain)]} { set cookies($domain) [list] }
+	if {![info exists cookies($domain)]} { set cookies($domain) {} }
 	foreach {name value} $state(meta) {
 
 		if {[string equal -nocase $name "Set-Cookie"]} {
@@ -217,7 +217,7 @@ proc pct_encode_extended {what} {
 	return [string map $enc $what]
 }
 
-# Interpret an URL fragment relative to a complete URL
+# Interpret an URL fragment relative to a complete URL - may be dead code
 proc relative {full partial} {
 	if {[string match -nocase http* $partial]} { return $partial }
 	set base [join [lrange [split $full /] 0 2] /]
@@ -240,6 +240,41 @@ proc extract_charset {content_type charset} {
 	return $charset
 }
 
+# stolen from the http library
+variable encodings [string tolower [encoding names]]
+proc CharsetToEncoding {charset} {
+    variable encodings
+
+    set charset [string tolower $charset]
+    if {[regexp {iso-?8859-([0-9]+)} $charset -> num]} {
+        set encoding "iso8859-$num"
+    } elseif {[regexp {iso-?2022-(jp|kr)} $charset -> ext]} {
+        set encoding "iso2022-$ext"
+    } elseif {[regexp {shift[-_]?js} $charset]} {
+        set encoding "shiftjis"
+    } elseif {[regexp {(?:windows|cp)-?([0-9]+)} $charset -> num]} {
+        set encoding "cp$num"
+    } elseif {$charset eq "us-ascii"} {
+        set encoding "ascii"
+    } elseif {[regexp {(?:iso-?)?lat(?:in)?-?([0-9]+)} $charset -> num]} {
+        switch -- $num {
+            5 {set encoding "iso8859-9"}
+            1 - 2 - 3 {
+                set encoding "iso8859-$num"
+            }
+        }
+    } else {
+        # other charset, like euc-xx, utf-8,...  may directly map to encoding
+        set encoding $charset
+    }
+    set idx [lsearch -exact $encodings $encoding]
+    if {$idx >= 0} {
+        return $encoding
+    } else {
+        return "binary"
+    }
+}
+
 # Fix the charset of an HTTP charset according to
 #  * <meta charset> / <meta http-equiv="content-type"> if available
 #  * HTTP header
@@ -249,7 +284,7 @@ proc fix_charset {data charset s_type} {
 	if {[binary scan $data cucucucu b1 b2 b3 b4] < 4} return
 
 	set stripbytes 0
-	
+
 	# TODO is UCS-4 supported at all?
 	# FIXME BOM stripping is currently broken. Decoding of UTF-16BE will
 	# fail, decoded UTF-16LE will contain the BOM which will confuse the
@@ -275,7 +310,7 @@ proc fix_charset {data charset s_type} {
 	# This might be incorrect:
 	set data [string range $data $stripbytes [string length $data]]
 
-	set charset [http::CharsetToEncoding $charset]
+	set charset [CharsetToEncoding $charset]
 
 	if {$charset == "binary"} {return ""}
 	set data [encoding convertfrom $charset $data]
@@ -295,90 +330,81 @@ proc progresshandler {tok total current} {
 	}
 }
 
-proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
+proc fetch {url {post ""} {headers {}} {validate 1}} {
 	# follows redirects, sets cookies and allows post data
 	# sets settings(content-length) if provided by server; 0 otherwise
 	# sets settings(url) for redirection tracking
 	# sets settings(content-type) so calling proc knows whether to parse data
 	# returns data if content-type=text/html; returns content-type otherwise
-	variable settings; variable cookies; variable ns
-	
-	if {[string length $post]} { set validate 0 }
+	variable settings; variable cookies; variable ns; variable request_data
+
+	if {$post ne ""} { set validate 0 }
 
 	set url [pct_encode_extended $url]
 	set settings(url) $url
 	set settings(error) ""
 
-	if {![string length $headers]} {
-		set headers [list Referer $url]
-		set domain [lindex [split $url /] 2]
-		if {[info exists cookies($domain)] && [llength $cookies($domain)]} {
-			lappend headers Cookie [join $cookies($domain) {; }]
-		}
+	set curl [::curl::init]
+
+	$curl configure -url $url                       \
+	                -failonerror 1                  \
+	                -nosignal 1                     \
+	                -timeout $settings(timeout)     \
+	                -nobody $validate               \
+	                -protocols {http https}         \
+	                -redirprotocols {http https}    \
+	                -referer $url                   \
+	                -followlocation 1               \
+	                -maxredirs 9                    \
+	                -headervar curlheaders          \
+	                -bodyvar data                   \
+			-useragent $settings(user-agent)\
+	;# todo: -progressproc ${ns}::progresshandler\
+	#-canceltransvar ${curl}cancel   \ <- this is documented in TclCurl but doesn't exist.. wtf
+	#-errorbuffer curlerror       \
+
+	set domain [lindex [split $url /] 2]
+	if {[info exists cookies($domain)] && [llength $cookies($domain)]} {
+		$curl configure -cookie [join $cookies($domain) {; }]
 	}
 
-	# -binary true  is essential here because the page charset sometimes
-	# does not match the HTTP header charset, sometimes isn't present at
-	# all, then the encoding would be forced to ISO-8859-1 by default and
-	# unicode would be broken afterwards.
-	set command [list ::http::geturl $url             \
-	                  -timeout $settings(timeout)     \
-	                  -validate $validate             \
-	                  -binary true                    \
-	                  -progress ${ns}::progresshandler]
-
-	if {[string length $post]} {
-		lappend command -query $post
+	if {$post ne ""} {
+		$curl configure -post 1 -postfields $post
 	}
 
-	if {[string length $headers]} {
-		lappend command -headers $headers
+	if {$headers ne {}} {
+		$curl configure -httpheader $headers
 	}
 
 	set data ""
 
-	if {[catch $command http]} {
-		set settings(error) "HTTP error: $http"
-		return ""
-	} else {
-		update_cookies $http
-		set err [::http::error $http]
-		set status [::http::status $http]
-		if {$status == "error"} {
-			set settings(error) "Error: $err"
-			return ""
-		} elseif {$status == "reset"} {
-			set settings(error) "Error: Connection reset"
-			return ""
-		} elseif {$status == "timeout"} {
-			set settings(error) "Error: Connection timed out"
-			return ""
-		} else {
-			set data [::http::data $http]
+	if {[catch {$curl perform} error]} {
+		set extra ""
+		if {$error == 22} {
+				set extra " ([$curl getinfo responsecode])"
 		}
+		set settings(error) "Error: [curl::easystrerror $error]$extra";
+		$curl cleanup
+		return
+	} elseif {$error == 28} {
+		set settings(error) "Error: Connection timed out"
+		$curl cleanup
+		return
+	} elseif {$error != 0} {
+		set settings(error) "Error: [curl::easystrerror $error]"
+		$curl cleanup
+		return
 	}
-	
-	upvar #0 $http state
-	set data [fix_charset $data $state(charset) $state(type)]
-	foreach {name val} $state(meta) { set meta([string tolower $name]) $val }
+  # TODO write redirect information into proper variable for plugins to use -
+  # it's in libcurl now, not here anymore
 
-	::http::cleanup $http
+	#update_cookies $curl # TODO
+	set content_type [string trim [string tolower [$curl getinfo contenttype]]]
+	set charset "iso-8859-1" ;# default as per RFC, maybe in 2017 UTF-8 is a better choice.
 
-	if {[info exists meta(location)]} {
-		set meta(redirect) $meta(location)
-	}
-
-	if {[info exists meta(redirect)]} {
-
-		set meta(redirect) [relative $url $meta(redirect)]
-
-		if {[incr iterations] < 10} {
-			return [fetch $meta(redirect) "" $headers $iterations $validate]
-		} else {
-			set settings(error) "Error: too many redirections"
-			return ""
-		}
-	}
+	set data [fix_charset $data $charset $content_type]
+	foreach {name val} [array get curlheaders] { set meta([string tolower $name]) $val }
+	$curl cleanup
 
 	set settings(content-length) 0
 	if {[info exists meta(content-length)]} {
@@ -392,14 +418,14 @@ proc fetch {url {post ""} {headers ""} {iterations 0} {validate 1}} {
 	    || [string match -nocase $settings(content-type) "application/xhtml+xml"]} {
 		if {$validate} {
 			# It was a HEAD request, redo the request with GET
-			return [fetch $url "" $headers [incr iterations] 0]
+			return [fetch $url "" $headers 0]
 		} else {
 			return $data
 		}
 	} elseif {$settings(content-type) != ""} {
 		return "Content type: $settings(content-type)"
 	} else {
-		warn "No content type set. Please report a bug and include the URL."
+		warn "No content type set. Please report a bug and include the URL: $url"
 	}
 	return
 }
@@ -412,6 +438,7 @@ proc process_title {url} {
 	# clean up previous state
 	set settings(title) ""
 	set settings(content-type) ""
+	set settings(content-length) ""
 	set settings(url) ""
 
 	set title(data)		  [fetch $url "" $settings(default-headers)]
@@ -456,7 +483,7 @@ namespace eval plugins {
 		set tcl2 "$settings(plugin-base-path)/${plugin}/${plugin}.tcl"
 		if {
 		   ( [file exists $tcl1] &&
-		     [catch { namespace eval $plugns source $tcl1 } err] ) 
+		     [catch { namespace eval $plugns source $tcl1 } err] )
 		|| ( [file exists $tcl2] &&
 		     [catch { namespace eval $plugns source $tcl2 } err] )
 		} then {
@@ -480,7 +507,7 @@ namespace eval plugins {
 			namespace path ::urlmagic
 		}
 	}
-		
+
 	proc unload {plugin} {
 		variable loaded_plugins
 
@@ -524,7 +551,7 @@ namespace eval plugins {
 
 plugins::unload_all
 source $settings(config-file) ;# read it before initializing everything
-  
+
 if {$settings(htmltitle) == "perl"} {
 	set settings(pipecmd) "$settings(perl-interpreter) $settings(base-path)/htmltitle_perlhtml5/htmltitle.pl"
 	set settings(use-tclx) 0
@@ -571,10 +598,6 @@ bind part - * ${ns}::unignore
 bind sign - * ${ns}::unignore
 # TODO: cron-bind that automatically deletes stale ignores
 bind pubm - * ${ns}::find_urls
-
-# Initialise https
-::http::register https 443 "::tls::socket $settings(tls-options)"
-::http::config -useragent $settings(user-agent)
 
 putlog "urlmagic.tcl $VERSION loaded."
 

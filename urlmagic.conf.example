@@ -68,13 +68,6 @@ set settings(title-format) "\002%s\002"
 # channel.
 set settings(global-silent) no
 
-# Set the options for https support here. More information:
-# http://docs.activestate.com/activetcl/8.6/tls/tls.html#tls::import
-# You probably won't need this, but make sure none of your other scripts 
-# registers tls::socket into the http module for tls support, or else you
-# might accidentally turn off TLSv1 support.
-set settings(tls-options) {-ssl2 no -tls1 yes}
-
 # Uncomment either of the following lines, gumbo is recommended but will
 # require you to install the Google gumbo library and to compile a Tcl module
 # in the subdirectory "htmltitle_gumbo". arabica is another such module using
