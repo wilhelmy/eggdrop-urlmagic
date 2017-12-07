@@ -104,6 +104,8 @@ proc find_urls {nick uhost hand chan txt} {
 
 	if {[matchattr $hand $settings(ignore-flags)] || ![channel get $chan $settings(udef-flag)]} { return }
 
+	set txt [stripcodes abcgru $txt]
+
 	if {![regexp -nocase $settings(url-regex) $txt url] || [string length $url] < 9} { return }
 
 	# nuke array
