@@ -1,6 +1,6 @@
 #! tclsh
 # Copyright (c) 2011      by Steve "rojo" Church
-#           (c) 2013-2016 by Moritz "ente" Wilhelmy
+#           (c) 2013-2018 by Moritz "ente" Wilhelmy
 #
 # See the README, INSTALL and LICENSE files for more information.
 # Most people will want to skip this file entirely and will only need to modify
