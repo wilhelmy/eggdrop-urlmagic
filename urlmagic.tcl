@@ -64,7 +64,6 @@ if {! [file exists $settings(config-file)]} {
 }
 
 variable VERSION 1.1+hg
-variable cookies
 variable ns [namespace current]
 variable ignores ;# temporary ignores
 
@@ -153,55 +152,6 @@ proc find_urls {nick uhost hand chan txt} {
 
 	# Post-String hook: Called after everything is done
 	hook::call urlmagic <Post-String>
-}
-
-# TODO: rewrite cookie code.
-# use cron bind to expire both old cookies and ignores
-proc update_cookies {tok} {
-	variable cookies; variable settings; variable ns
-
-	upvar #0 $tok state
-	set domain [lindex [split $state(url) /] 2]
-	if {![info exists cookies($domain)]} { set cookies($domain) {} }
-	foreach {name value} $state(meta) {
-
-		if {[string equal -nocase $name "Set-Cookie"]} {
-
-			if {[regexp -nocase {expires=([^;]+)} $value - expires]} {
-
-				if {[catch {expr {([clock scan $expires -gmt 1] - [clock seconds]) / 60}} expires] || $expires < 1 } {
-					set expires 15
-				} elseif {$expires > $settings(max-cookie-age)} {
-					set expires $settings(max-cookie-age)
-				}
-			} { set expires $settings(max-cookie-age) }
-
-			set value [lindex [split $value \;] 0]
-			set cookie_name [lindex [split $value =] 0]
-
-			set expire_command [list ${ns}::expire_cookie $domain $cookie_name]
-
-			if {[set pos [lsearch -glob $cookies($domain) ${cookie_name}=*]] > -1} {
-				set cookies($domain) [lreplace $cookies($domain) $pos $pos $value]
-				foreach t [timers] {
-					if {[lindex $t 1] == $expire_command} { killtimer [lindex $t 2] }
-				}
-			} else {
-				lappend cookies($domain) $value
-			}
-
-			timer $expires $expire_command
-		}
-	}
-}
-
-proc expire_cookie {domain cookie_name} {
-	variable cookies
-	if {![info exists cookies($domain)]} { return }
-	if {[set pos [lsearch -glob $cookies($domain) ${cookie_name}=*]] > -1} {
-		set cookies($domain) [lreplace $cookies($domain) $pos $pos]
-	}
-	if {![llength $cookies($domain)]} { unset cookies($domain) }
 }
 
 # Lookup table for non-printable characters which need to be URL-encoded
@@ -332,24 +282,27 @@ proc progresshandler {dltotal dlnow ultotal ulnow} {
 
 	if {$dlnow >= $settings(max-download)} {
 		set ${ns}::curl-abort 1
+                warn "(debug) vvvv file too big, aborting"
 	}
 
 	return
 }
 
 proc fetch {url {post ""} {headers {}} {validate 0}} {
-	# follows redirects, sets cookies and allows post data
+	# follows redirects and allows post data
 	# sets settings(content-length) if provided by server; 0 otherwise
 	# sets settings(url) for redirection tracking
 	# sets settings(content-type) so calling proc knows whether to parse data
 	# returns data if content-type=text/html; returns content-type otherwise
-	variable settings; variable cookies; variable ns; variable request_data
+	variable settings; variable ns; variable request_data
 
 	if {$post ne ""} { set validate 0 }
 
 	set url [pct_encode_extended $url]
+	set data ""
 	set settings(url) $url
 	set settings(error) ""
+	set settings(content-length) 0
 	set ${ns}::curl-abort 0
 
 	# Initialize the curl handle - it is set up in such a way that other scripts
@@ -378,11 +331,6 @@ proc fetch {url {post ""} {headers {}} {validate 0}} {
 	                -progressproc ${ns}::progresshandler \
 	                -canceltransvarname ${ns}::curl-abort
 
-	set domain [lindex [split $url /] 2]
-	if {[info exists cookies($domain)] && [llength $cookies($domain)]} {
-		$curl configure -cookie [join $cookies($domain) {; }]
-	}
-
 	if {$post ne ""} {
 		$curl configure -post 1 -postfields $post
 	}
@@ -390,8 +338,6 @@ proc fetch {url {post ""} {headers {}} {validate 0}} {
 	if {$headers ne {}} {
 		$curl configure -httpheader $headers
 	}
-
-	set data ""
 
 	if {[catch {$curl perform} error] && $error != 42} {
 		set extra ""
@@ -406,13 +352,12 @@ proc fetch {url {post ""} {headers {}} {validate 0}} {
 	}
 
         if {$error == 42} { # hummmm....
-                putlog "file was too big"
+                warn "(debug) ^^^^ abort seems to have worked - if there is no matching vvvv message this could be a bug"
         }
 
 	# TODO write redirect information into proper variable for plugins to use -
 	# it's in libcurl now, not here anymore
 
-	#update_cookies $curl # TODO
 	set content_type [string trim [string tolower [$curl getinfo contenttype]]]
 	set charset "iso-8859-1" ;# default as per RFC, maybe in 2017 UTF-8 is a better choice.
 
@@ -420,7 +365,6 @@ proc fetch {url {post ""} {headers {}} {validate 0}} {
 	foreach {name val} [array get curlheaders] { set meta([string tolower $name]) $val }
 	$curl cleanup
 
-	set settings(content-length) 0
 	if {[info exists meta(content-length)]} {
 		set settings(content-length) [any $meta(content-length) 0]
 	}
