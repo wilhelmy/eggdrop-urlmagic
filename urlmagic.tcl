@@ -322,15 +322,22 @@ proc any {a b} {
 	return [expr {$a != "" ? $a : $b}]
 }
 
-# Progress handler which aborts the download if it turns out to be too large
-proc progresshandler {tok total current} {
-	variable settings
-	if {$current >= $settings(max-download)} {
-		::http::reset $tok toobig
+# Progress handler which aborts the download if it turns out to be too large -
+# used in case of chunked-transfer-encoding or where the size of the file isn't
+# known through the server's response headers - XXX not sure it works as
+# intended, it doesn't for large plain files because TclCurl tries to allocate
+# the memory in advance. That's why -maxfilesize is used additionally.
+proc progresshandler {dltotal dlnow ultotal ulnow} {
+	variable settings; variable ns;
+
+	if {$dlnow >= $settings(max-download)} {
+		set ${ns}::curl-abort 1
 	}
+
+	return
 }
 
-proc fetch {url {post ""} {headers {}} {validate 1}} {
+proc fetch {url {post ""} {headers {}} {validate 0}} {
 	# follows redirects, sets cookies and allows post data
 	# sets settings(content-length) if provided by server; 0 otherwise
 	# sets settings(url) for redirection tracking
@@ -343,7 +350,15 @@ proc fetch {url {post ""} {headers {}} {validate 1}} {
 	set url [pct_encode_extended $url]
 	set settings(url) $url
 	set settings(error) ""
+	set ${ns}::curl-abort 0
 
+	# Initialize the curl handle - it is set up in such a way that other scripts
+	# can still use a second curl handle, but urlmagic is not written in an
+	# asynchronous way and thus will only ever use one curl handle at a time and
+	# hopefully destroy it safely whenever it is done - after some months of using
+	# the TclCurl branch I've never seen it leak curl handles but I'm not really
+	# confident that it doesn't so if you see a second curl handle, please report
+	# it.
 	set curl [::curl::init]
 
 	$curl configure -url $url                       \
@@ -358,10 +373,10 @@ proc fetch {url {post ""} {headers {}} {validate 1}} {
 	                -maxredirs 9                    \
 	                -headervar curlheaders          \
 	                -bodyvar data                   \
-			-useragent $settings(user-agent)\
-	;# todo: -progressproc ${ns}::progresshandler\
-	#-canceltransvar ${curl}cancel   \ <- this is documented in TclCurl but doesn't exist.. wtf
-	#-errorbuffer curlerror       \
+	                -maxfilesize $settings(max-download) \
+	                -useragent $settings(user-agent)     \
+	                -progressproc ${ns}::progresshandler \
+	                -canceltransvarname ${ns}::curl-abort
 
 	set domain [lindex [split $url /] 2]
 	if {[info exists cookies($domain)] && [llength $cookies($domain)]} {
@@ -378,25 +393,24 @@ proc fetch {url {post ""} {headers {}} {validate 1}} {
 
 	set data ""
 
-	if {[catch {$curl perform} error]} {
+	if {[catch {$curl perform} error] && $error != 42} {
 		set extra ""
 		if {$error == 22} {
-				set extra " ([$curl getinfo responsecode])"
+			set extra " ([$curl getinfo responsecode])"
 		}
 		set settings(error) "Error: [curl::easystrerror $error]$extra";
+
 		$curl cleanup
-		return
-	} elseif {$error == 28} {
-		set settings(error) "Error: Connection timed out"
-		$curl cleanup
-		return
-	} elseif {$error != 0} {
-		set settings(error) "Error: [curl::easystrerror $error]"
-		$curl cleanup
+
 		return
 	}
-  # TODO write redirect information into proper variable for plugins to use -
-  # it's in libcurl now, not here anymore
+
+        if {$error == 42} { # hummmm....
+                putlog "file was too big"
+        }
+
+	# TODO write redirect information into proper variable for plugins to use -
+	# it's in libcurl now, not here anymore
 
 	#update_cookies $curl # TODO
 	set content_type [string trim [string tolower [$curl getinfo contenttype]]]
