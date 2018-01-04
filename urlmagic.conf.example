@@ -19,8 +19,8 @@ set settings(seconds-between-user) 2
 # wait this many milliseconds for a web server to respond
 set settings(timeout) 10000
 
-# do not download pages larger than this many bytes
-set settings(max-download) 1048576
+# do not download pages larger than this many bytes (default: 1 MiB = 1*1024*1024 byte)
+set settings(max-download) [expr 1*1024*1024]
 
 # if cookie shelf life > this many minutes, eat it sooner
 set settings(max-cookie-age) 2880
@@ -45,7 +45,7 @@ set settings(seconds-between-channel) 1
 # that you prefer english versions of any document over any other language,
 # even if your IP is not geographically located in an English-speaking country.
 # See http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1
-set settings(default-headers)        {Accept-Language "en, *;q=0.9"}
+set settings(default-headers)        {"Accept-Language: en, *;q=0.9"}
 
 # What format should be used for the nickname part of the url info that's sent
 # to the channel? %s is replaced by the nickname. To insert a literal %, you
