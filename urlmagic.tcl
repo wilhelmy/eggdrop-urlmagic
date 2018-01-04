@@ -317,7 +317,7 @@ proc fetch {url {post ""} {headers {}} {validate 0}} {
 	$curl configure -url $url                       \
 	                -failonerror 1                  \
 	                -nosignal 1                     \
-	                -timeout $settings(timeout)     \
+	                -timeoutms $settings(timeout)   \
 	                -nobody $validate               \
 	                -protocols {http https}         \
 	                -redirprotocols {http https}    \
@@ -356,7 +356,7 @@ proc fetch {url {post ""} {headers {}} {validate 0}} {
         }
 
 	# TODO write redirect information into proper variable for plugins to use -
-	# it's in libcurl now, not here anymore
+	# it's in libcurl now, not here anymore: $curl getinfo effectiveurl
 
 	set content_type [string trim [string tolower [$curl getinfo contenttype]]]
 	set charset "iso-8859-1" ;# default as per RFC, maybe in 2017 UTF-8 is a better choice.
