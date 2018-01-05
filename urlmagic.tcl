@@ -282,7 +282,7 @@ proc progresshandler {dltotal dlnow ultotal ulnow} {
 
 	if {$dlnow >= $settings(max-download)} {
 		set ${ns}::curl-abort 1
-                warn "(debug) vvvv file too big, aborting"
+		warn "(debug) vvvv file too big, aborting"
 	}
 
 	return
@@ -339,7 +339,7 @@ proc fetch {url {post ""} {headers {}} {validate 0}} {
 		$curl configure -httpheader $headers
 	}
 
-	if {[catch {$curl perform} error] && $error != 42} {
+	if {[catch {$curl perform} error] && $error ni {42 63}} {
 		set extra ""
 		if {$error == 22} {
 			set extra " ([$curl getinfo responsecode])"
@@ -351,9 +351,9 @@ proc fetch {url {post ""} {headers {}} {validate 0}} {
 		return
 	}
 
-        if {$error == 42} { # hummmm....
-                warn "(debug) ^^^^ abort seems to have worked - if there is no matching vvvv message this could be a bug"
-        }
+	if {$error == 42} { # hummmm....
+		warn "(debug) ^^^^ abort seems to have worked - if there is no matching vvvv message this could be a bug"
+	}
 
 	# TODO write redirect information into proper variable for plugins to use -
 	# it's in libcurl now, not here anymore: $curl getinfo effectiveurl
@@ -377,15 +377,12 @@ proc fetch {url {post ""} {headers {}} {validate 0}} {
 		if {$validate} {
 			# It was a HEAD request, redo the request with GET
 			return [fetch $url "" $headers 0]
-		} else {
+		} elseif {$error ni {42 63}} {
 			return $data
 		}
-	} elseif {$settings(content-type) != ""} {
-		return "Content type: $settings(content-type)"
-	} else {
-		warn "No content type set. Please report a bug and include the URL: $url"
 	}
-	return
+
+	return "Content type: $settings(content-type)"
 }
 
 proc process_title {url} {
