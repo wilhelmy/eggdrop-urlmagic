@@ -1,28 +1,4 @@
-# This plugin for urlmagic logs all URLs posted on a channel into a SQLite 3
-# database. The cgi script in the cgi/ subdirectory can be used to provide a
-# web frontend for this database.
-
-## SETTINGS
-# See urlmagic/plugins/sqlite.conf. Append the content of this file to your
-# conf/urlmagic.tcl, e.g. by doing
-#  cat ~/eggdrop/urlmagic/plugins/sqlite.conf >> ~/eggdrop/conf/urlmagic.tcl
-# if you installed your eggdrop into ~/eggdrop.
-
-## IMPORTANT
-# For this to work you will need to install sqlite3 for Tcl.
-# Use the following commands:
-#
-# Debian / Ubuntu:
-#    apt-get install libsqlite3-tcl
-#
-# Red Hat / CentOS
-#    yum install sqlite-tcl
-#
-# Gentoo:
-#    emerge -v sqlite
-#
-# FreeBSD / NetBSD:
-#    pkg_add -r sqlite3-tcl
+# USER DOCUMENTATION: Check out the README and sqlite.conf
 
 ## PROGRAMMER DOCUMENTATION
 # Eggdrop binds:
