@@ -30,7 +30,7 @@ set settings(user-agent) "Mozilla/5.0 (compatible; TCL [info patchlevel] HTTP li
 
 # this regular expression is used to detect URLs. URLs which do not contain
 # "://" will be extended to assume a default protocol of "http://"
-set settings(url-regex) {(https?://|www\.|[a-z0-9\-]+\.[a-z]{2,4}/)[^[:cntrl:][:space:]<>]+}
+set settings(url-regex) {(https?://|www\.|[a-z0-9\-]+\.[a-z]{2,4}/)[^[:cntrl:][:space:]<>#]+}
 
 # After someone posted an URL, ignore them for this many seconds. Set to 0 to disable
 set settings(seconds-between-user) 1
