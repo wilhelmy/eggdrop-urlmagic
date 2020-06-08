@@ -1,16 +1,15 @@
-Start with cloning the hg repo. This will make updates a lot easier, in case
+Start with cloning the git repo. This will make updates a lot easier, in case
 you find a bug (not unlikely).
 
    $ cd ~/eggdrop/scripts # assuming you installed eggdrop to ~/eggdrop
-   $ hg clone https://bitbucket.org/wilhelmy/eggdrop-urlmagic/
-   [hg output omitted]
+   $ git clone https://github.com/wilhelmy/eggdrop-urlmagic.git
+   [git output omitted]
 
 Alternatively, you can get a zip or tar.gz archive of the newest version here:
 (You only need one of these files since they all contain the same things.)
 
-   * https://bitbucket.org/wilhelmy/eggdrop-urlmagic/get/default.zip
-   * https://bitbucket.org/wilhelmy/eggdrop-urlmagic/get/default.tar.gz
-   * https://bitbucket.org/wilhelmy/eggdrop-urlmagic/get/default.tar.bz2
+   * https://github.com/wilhelmy/eggdrop-urlmagic/archive/master.zip
+   * https://github.com/wilhelmy/eggdrop-urlmagic/archive/master.tar.gz
 
 Unpack it, and place it in the subdirectory "scripts" inside the directory
 whereever you installed eggdrop.
