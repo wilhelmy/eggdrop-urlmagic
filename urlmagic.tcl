@@ -390,6 +390,8 @@ proc process_title {url} {
 	variable settings
 	variable title
 
+	if {$url == ""} return
+
 	# clean up previous state
 	set settings(title) ""
 	set settings(content-type) ""
