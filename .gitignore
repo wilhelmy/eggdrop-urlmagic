@@ -1,7 +1,7 @@
-glob:.*.sw?
-glob:*.orig
-glob:*.so
-glob:*.o
-glob:*.a
-glob:*.py?
-glob:*.bak
+.*.sw?
+*.orig
+*.so
+*.o
+*.a
+*.py?
+*.bak
