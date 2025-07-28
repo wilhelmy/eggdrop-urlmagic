@@ -92,12 +92,13 @@ set settings(perl-interpreter) "/usr/bin/env perl"
 # should also copy-paste to this config file. The list items are separated by
 # space.
 #
-# Default: no plugins are enabled.
-set settings(plugins) {}
+# Default: only youtube plugin is enabled because youtube titles cannot be
+# fetched otherwise.
+set settings(plugins) {youtube}
 
 # Example (contains all plugins which currently exist, pick any that you like):
 #
-#set settings(plugins) {nsfw size sqlite tinyurl twitter}
+#set settings(plugins) {nsfw size sqlite tinyurl twitter youtube}
 
 
 }
